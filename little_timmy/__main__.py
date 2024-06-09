@@ -168,7 +168,7 @@ def main():
             parse_variable(var_name, var_value,
                            all_declared_vars, all_referenced_vars, path)
     # vars
-    for path in get_files_in_folder(directory, "vars", YAML_FILE_EXTENSION_GLOB):
+    for path in get_files_in_folder(directory, "vars", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         print(f"var file {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
