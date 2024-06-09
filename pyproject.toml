@@ -1,0 +1,22 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "little_timmy"
+version = "0.0.1"
+description = "Little Timmy will try their best to find those unused Ansible variables."
+readme = "README.md"
+authors = [{ name = "Huw" }]
+license = { file = "LICENSE" }
+
+dependencies = ["ansible >= 9.6.0"]
+requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/hoo29/little-timmy"
+
+[project.scripts]
+little_timmy = "little_timmy.__main__:main"
