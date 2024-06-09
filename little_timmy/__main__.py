@@ -1,5 +1,8 @@
 from ansible import cli
 from ansible import constants as C
+from ansible_collections.ansible.utils.plugins.filter.ipaddr import FilterModule as UtilsIpAddrFilters
+from ansible_collections.community.general.plugins.filter.lists import FilterModule as ListsFilters
+from ansible_collections.community.general.plugins.filter.lists_mergeby import FilterModule as ListsMergeByFilters
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.plugins.filter.core import FilterModule as CoreFilters
@@ -8,9 +11,6 @@ from ansible.plugins.filter.urls import FilterModule as UrlsFilters
 from ansible.plugins.filter.urlsplit import FilterModule as UrlSplitFilters
 from ansible.plugins.loader import init_plugin_loader
 from ansible.plugins.test.core import TestModule as CoreTests
-from ansible_collections.community.general.plugins.filter.lists import FilterModule as ListsFilters
-from ansible_collections.community.general.plugins.filter.lists_mergeby import FilterModule as ListsMergeByFilters
-from ansible_collections.ansible.utils.plugins.filter.ipaddr import FilterModule as UtilsIpAddrFilters
 from glob import iglob
 from jinja2 import Environment, meta
 import argparse
@@ -72,7 +72,7 @@ MAGIC_VAR_NAMES = {
 YAML_FILE_EXTENSION_GLOB = "*y*ml"
 
 EXTERNAL_DIRs = ["galaxy_roles", "ansible_collections"]
-DIRS_TO_EXCLUDE = ["molecule", "venv"]
+DIRS_TO_EXCLUDE = ["molecule", "venv", "tests"]
 
 # there must be a better way to do this
 JINJA_ENV = Environment()
@@ -176,7 +176,7 @@ def main():
                            all_declared_vars, all_referenced_vars, path)
 
     # defaults
-    for path in get_files_in_folder(directory, "defaults", YAML_FILE_EXTENSION_GLOB):
+    for path in get_files_in_folder(directory, "defaults", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         print(f"default {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
