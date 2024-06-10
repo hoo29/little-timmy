@@ -1,19 +1,12 @@
-from ansible import cli
-from ansible import constants as C
-from ansible_collections.ansible.utils.plugins.filter.ipaddr import FilterModule as UtilsIpAddrFilters
-from ansible_collections.community.general.plugins.filter.lists import FilterModule as ListsFilters
-from ansible_collections.community.general.plugins.filter.lists_mergeby import FilterModule as ListsMergeByFilters
+from ansible import cli, constants as C
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
-from ansible.plugins.filter.core import FilterModule as CoreFilters
-from ansible.plugins.filter.mathstuff import FilterModule as MathFilters
-from ansible.plugins.filter.urls import FilterModule as UrlsFilters
-from ansible.plugins.filter.urlsplit import FilterModule as UrlSplitFilters
-from ansible.plugins.loader import init_plugin_loader
-from ansible.plugins.test.core import TestModule as CoreTests
+from ansible.plugins.loader import init_plugin_loader, filter_loader, test_loader
+from ansible.template import JinjaPluginIntercept
 from glob import iglob
 from jinja2 import Environment, meta
 
+import logging
 import argparse
 import os
 
@@ -50,14 +43,13 @@ MAGIC_VAR_NAMES = {
     "ansible_search_path",
     "ansible_skip_tags",
     "ansible_ssh_common_args",
+    "ansible_ssh_transfer_method",
     "ansible_ssh_use_tty",
     "ansible_user",
     "ansible_verbosity",
     "ansible_version",
     "group_names",
     "groups",
-    "groups",
-    "hostvars"
     "hostvars",
     "inventory_dir",
     "inventory_file",
@@ -69,7 +61,7 @@ MAGIC_VAR_NAMES = {
     "role_name",
     "role_names",
     "role_path",
-    "undef"
+    "undef",
     "undefined",
 }
 
@@ -77,20 +69,11 @@ YAML_FILE_EXTENSION_GLOB = "*y*ml"
 EXTERNAL_DEP_DIRS = ["galaxy_roles", "ansible_collections"]
 GLOBAL_DIRS_TO_EXCLUDE = ["molecule", "venv", "tests"]
 
-# there must be a better way to do this
 JINJA_ENV = Environment()
-core_tests = CoreTests().tests()
-JINJA_ENV.tests.update(core_tests)
-filter_modules = {
-    "ansible.builtin.core": [CoreFilters, UrlsFilters, UrlSplitFilters, MathFilters],
-    "ansible.utils": [UtilsIpAddrFilters],
-    "community.general": [ListsFilters, ListsMergeByFilters],
-}
-for fqdn, modules in filter_modules.items():
-    for module in modules:
-        for name, filter_func in module().filters().items():
-            JINJA_ENV.filters[f"{fqdn}.{name}"] = filter_func
-            JINJA_ENV.filters[name] = filter_func
+JINJA_ENV.filters = JinjaPluginIntercept(JINJA_ENV.filters, filter_loader)
+JINJA_ENV.tests = JinjaPluginIntercept(JINJA_ENV.tests, test_loader)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def get_files_in_folder(root_dir: str, folder: str, file_glob: str = "*", include_ext=False, dirs_to_exclude: list[str] = []):
@@ -143,30 +126,38 @@ def main():
     parser = argparse.ArgumentParser(description="Process a directory path.")
     parser.add_argument("directory", nargs="?", default=".",
                         type=str, help="The directory to process")
+    parser.add_argument("--log", default="INFO", type=str,
+                        help="set the logging level (default: INFO)")
     args = parser.parse_args()
+
+    log_level = getattr(logging, args.log.upper(), None)
+    if not isinstance(log_level, int):
+        raise ValueError(f"Invalid log level: {args.log}")
+    logging.basicConfig(level=log_level, format="%(message)s")
+
+    LOGGER.debug("starting")
+
     directory = os.path.abspath(args.directory)
     if not os.path.isdir(directory):
-        print(f"{directory} does not exist.")
-        exit(1)
-
+        raise ValueError(f"{directory} does not exist.")
     if directory.endswith("/"):
         directory = directory[:-1]
+
+    init_plugin_loader()
 
     all_declared_vars: dict[str, set[str]] = {}
     all_referenced_vars: dict[str, set[str]] = {}
 
-    init_plugin_loader()
     # Setup dataloader and vault
     loader = DataLoader()
     vault_ids = C.DEFAULT_VAULT_IDENTITY_LIST
     vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
     loader.set_vault_secrets(vault_secrets)
-
     # Process all the things
 
     # group_vars
     for path in get_files_in_folder(directory, "**/group_vars", YAML_FILE_EXTENSION_GLOB):
-        print(f"group_var {path}")
+        LOGGER.debug(f"group_var {path}")
 
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
@@ -175,14 +166,14 @@ def main():
 
     # host_vars
     for path in get_files_in_folder(directory, "**/host_vars", YAML_FILE_EXTENSION_GLOB):
-        print(f"host_var {path}")
+        LOGGER.debug(f"host_var {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value,
                            all_declared_vars, all_referenced_vars, path, directory)
     # vars
     for path in get_files_in_folder(directory, "**/vars", YAML_FILE_EXTENSION_GLOB, include_ext=True):
-        print(f"var file {path}")
+        LOGGER.debug(f"var file {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value,
@@ -190,7 +181,7 @@ def main():
 
     # defaults
     for path in get_files_in_folder(directory, "**/defaults", YAML_FILE_EXTENSION_GLOB, include_ext=True):
-        print(f"default {path}")
+        LOGGER.debug(f"default {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value,
@@ -198,8 +189,8 @@ def main():
 
     # inventory
     for inv_folder in ["inventory", "inventories"]:
-        for path in get_files_in_folder(directory, inv_folder, dirs_to_exclude=["group_vars", "host_vars"]):
-            print(f"inv file {path}")
+        for path in get_files_in_folder(directory, inv_folder, dirs_to_exclude=["group_vars", "host_vars", "files"]):
+            LOGGER.debug(f"inv file {path}")
             inventory = InventoryManager(loader=loader, sources=path)
             # groups
             for _, group_value in inventory.groups.items():
@@ -216,39 +207,43 @@ def main():
 
     # templates
     for path in get_files_in_folder(directory, "**/templates", include_ext=True):
-        print(f"template file {path}")
+        LOGGER.debug(f"template file {path}")
         with open(path, "r") as f:
             parse_jinja(f.read(), all_referenced_vars, path)
 
     # playbook in current directory
     for path in iglob(f"{directory}/playbook*{YAML_FILE_EXTENSION_GLOB}", recursive=False):
-        print(f"playbook {path}")
+        LOGGER.debug(f"playbook {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(
                 f.read(), all_declared_vars, all_referenced_vars, path)
 
     # tasks files
     for path in get_files_in_folder(directory, "**/tasks", YAML_FILE_EXTENSION_GLOB, True):
-        print(f"task file {path}")
+        LOGGER.debug(f"task file {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(
                 f.read(), all_declared_vars, all_referenced_vars, path)
 
     # handlers files
     for path in get_files_in_folder(directory, "**/handlers", YAML_FILE_EXTENSION_GLOB, True):
-        print(f"handler file {path}")
+        LOGGER.debug(f"handler file {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(
                 f.read(), all_declared_vars, all_referenced_vars, path)
 
     for var_name in all_referenced_vars.keys():
-        print(f"removing referenced var {var_name}")
+        LOGGER.debug(f"removing referenced var {var_name}")
         all_declared_vars.pop(var_name, None)
 
-    print("\n **unused vars** \n")
+    LOGGER.debug("\n **unused vars** \n")
+    if not all_declared_vars:
+        LOGGER.info("no unused vars")
     # filter out vars only declared in galaxy_roles and collections
     for var_name, var_locations in all_declared_vars.items():
-        print(f"{var_name} at {var_locations}\n")
+        LOGGER.info(f"{var_name} at {var_locations}\n")
+
+    LOGGER.debug("finished")
 
 
 if __name__ == "__main__":
