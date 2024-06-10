@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "little_timmy"
-version = "0.0.4"
+version = "0.0.5"
 description = "Little Timmy will try their best to find those unused Ansible variables."
 readme = "README.md"
 authors = [{ name = "Huw" }]
 license = { file = "LICENSE" }
 
-dependencies = ["ansible >= 9.6.0"]
+dependencies = ["ansible >= 8.0.0"]
 requires-python = ">=3.10"
 
 [project.urls]
