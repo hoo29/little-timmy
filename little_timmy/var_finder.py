@@ -196,7 +196,7 @@ def find_unused_vars(directory: str) -> dict[str, set[str]]:
             parse_jinja(f.read(), all_referenced_vars, path)
 
     # playbooks
-    for path in get_files_in_folder(directory, ".", file_glob="playbook*"):
+    for path in get_files_in_folder(directory, ".", file_glob="*playbook*"):
         LOGGER.debug(f"playbook {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(
