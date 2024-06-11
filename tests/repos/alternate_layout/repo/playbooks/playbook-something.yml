@@ -1,0 +1,31 @@
+- name: No deps
+  hosts: SERVERS
+  become: false
+  gather_facts: false
+  connection: local
+  pre_tasks:
+    - name: Pre
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: used_var
+  tasks:
+    - name: Debug1
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: used_var
+
+    - name: Debug2
+      delegate_to: localhost
+      ansible.builtin.debug:
+        msg: hi
+      when: conditional | bool
+
+    - name: Debug3
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: used_host_var
+
+    - name: Debug3
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: used_inv_var2
