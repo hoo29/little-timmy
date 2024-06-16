@@ -3,7 +3,7 @@ name: Python test
 on: [push]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,3 +23,5 @@ jobs:
 
       - name: Run tests
         run: pytest
+        env:
+          ANSIBLE_VAULT_PASSWORD_FILE: tests/ansible_vault_password
