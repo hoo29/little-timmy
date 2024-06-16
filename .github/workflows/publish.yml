@@ -20,7 +20,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install .
+        run: pip install . .[build]
 
       - name: Build
         run: python -m build

@@ -21,3 +21,7 @@ little-timmy = "little_timmy.__main__:main"
 
 [project.optional-dependencies]
 tests = ["pytest"]
+build = ["build"]
+
+[tool.setuptools]
+packages = ["little_timmy"]
