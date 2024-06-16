@@ -8,5 +8,5 @@ ansible-galaxy collection install -f -r requirements.yml -p .
 ansible-galaxy role install -f -r requirements.yml -p galaxy_roles
 
 pip3 install little-timmy
-little_timmy
+little-timmy
 ```
