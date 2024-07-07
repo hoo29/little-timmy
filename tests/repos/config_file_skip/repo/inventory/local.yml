@@ -1,0 +1,13 @@
+all:
+  vars:
+    unused_inv_var: abc
+    used_inv_var2: abc
+
+SERVERS:
+  hosts:
+    localhost:
+      used_host_var: def {{ used_inv_var2 | trim }}
+
+STORAGE:
+  hosts:
+    localhost:

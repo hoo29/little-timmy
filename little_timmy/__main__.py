@@ -1,17 +1,20 @@
 import logging
 import argparse
 
+from .config_loader import find_and_load_config
 from .var_finder import find_unused_vars
 
 LOGGER = logging.getLogger(__name__)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Process a directory path.")
+    parser = argparse.ArgumentParser(description="Process a directory path")
     parser.add_argument("directory", nargs="?", default=".",
                         type=str, help="The directory to process")
-    parser.add_argument("--log", default="INFO", type=str,
+    parser.add_argument("-l", "--log-level", default="INFO", type=str,
                         help="set the logging level (default: INFO)")
+    parser.add_argument(
+        "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
     args = parser.parse_args()
 
     log_level = getattr(logging, args.log.upper(), None)
@@ -21,7 +24,9 @@ def main():
 
     LOGGER.debug("starting")
 
-    all_declared_vars = find_unused_vars(args.directory)
+    config = find_and_load_config(args.config_file_path)
+
+    all_declared_vars = find_unused_vars(args.directory, config)
 
     LOGGER.debug("\n **unused vars** \n")
     if not all_declared_vars:

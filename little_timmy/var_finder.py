@@ -1,13 +1,16 @@
+import logging
+import os
+
 from ansible import cli, constants as C
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.plugins.loader import init_plugin_loader, filter_loader, test_loader
 from ansible.template import JinjaPluginIntercept
+from dataclasses import dataclass
 from glob import iglob
 from jinja2 import Environment, meta
 
-import logging
-import os
+from .config_loader import Config
 
 MAGIC_VAR_NAMES = {
     "ansible_become_user",
@@ -77,6 +80,14 @@ LOGGER = logging.getLogger(__name__)
 init_plugin_loader()
 
 
+@dataclass
+class Context():
+    all_declared_vars: dict[str, set[str]]
+    all_referenced_vars: dict[str, set[str]]
+    config: Config
+    root_dir: str
+
+
 def get_files_in_folder(root_dir: str, folder: str, file_glob: str = "*", include_ext=False, dirs_to_exclude: list[str] = []):
     if not include_ext:
         dirs_to_exclude = dirs_to_exclude + EXTERNAL_DEP_DIRS
@@ -102,28 +113,28 @@ def parse_jinja(value: any, all_referenced_vars: dict[str, set[str]], source: st
         all_referenced_vars[referenced_var] = existing
 
 
-def parse_variable(var_name: str, var_value: any, all_declared_vars: dict[str, set[str]], all_referenced_vars: dict[str, set[str]], source: str, root_dir: str):
-    if var_name in MAGIC_VAR_NAMES:
+def parse_variable(var_name: str, var_value: any, source: str, context: Context):
+    if var_name in MAGIC_VAR_NAMES or var_name in context.config.skip_vars:
         return
-    relative_path = os.path.dirname(os.path.relpath(source, root_dir))
+    relative_path = os.path.dirname(os.path.relpath(source, context.root_dir))
     external = any(
         excluded_dir in relative_path for excluded_dir in EXTERNAL_DEP_DIRS)
     if not external:
-        existing = all_declared_vars.get(var_name, set())
+        existing = context.all_declared_vars.get(var_name, set())
         existing.add(source)
-        all_declared_vars[var_name] = existing
-    parse_jinja(var_value, all_referenced_vars, source)
+        context.all_declared_vars[var_name] = existing
+    parse_jinja(var_value, context.all_referenced_vars, source)
 
 
-def check_raw_file_for_variables(value: str, all_declared_vars: dict[str, set[str]], all_referenced_vars: dict[str, set[str]], source: str):
-    for var_name in all_declared_vars.keys():
+def check_raw_file_for_variables(value: str, source: str, context: Context):
+    for var_name in context.all_declared_vars.keys():
         if var_name in value:
-            existing = all_referenced_vars.get(var_name, set())
+            existing = context.all_referenced_vars.get(var_name, set())
             existing.add(source)
-            all_referenced_vars[var_name] = existing
+            context.all_referenced_vars[var_name] = existing
 
 
-def find_unused_vars(directory: str) -> dict[str, set[str]]:
+def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     if not os.path.isdir(directory):
         raise ValueError(f"{directory} does not exist.")
     if directory.endswith("/"):
@@ -131,6 +142,12 @@ def find_unused_vars(directory: str) -> dict[str, set[str]]:
 
     all_declared_vars: dict[str, set[str]] = {}
     all_referenced_vars: dict[str, set[str]] = {}
+    context = Context(**{
+        "all_declared_vars": all_declared_vars,
+        "all_referenced_vars": all_referenced_vars,
+        "config": config,
+        "root_dir": directory
+    })
 
     # Setup dataloader and vault
     loader = DataLoader()
@@ -145,31 +162,27 @@ def find_unused_vars(directory: str) -> dict[str, set[str]]:
 
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
-            parse_variable(var_name, var_value,
-                           all_declared_vars, all_referenced_vars, path, directory)
+            parse_variable(var_name, var_value, path, context)
 
     # host_vars
     for path in get_files_in_folder(directory, "**/host_vars", YAML_FILE_EXTENSION_GLOB):
         LOGGER.debug(f"host_var {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
-            parse_variable(var_name, var_value,
-                           all_declared_vars, all_referenced_vars, path, directory)
+            parse_variable(var_name, var_value, path, context)
     # vars
     for path in get_files_in_folder(directory, "**/vars", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"var file {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
-            parse_variable(var_name, var_value,
-                           all_declared_vars, all_referenced_vars, path, directory)
+            parse_variable(var_name, var_value, path, context)
 
     # defaults
     for path in get_files_in_folder(directory, "**/defaults", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"default {path}")
         contents = loader.load_from_file(path) or {}
         for var_name, var_value in contents.items():
-            parse_variable(var_name, var_value,
-                           all_declared_vars, all_referenced_vars, path, directory)
+            parse_variable(var_name, var_value, path, context)
 
     # inventory
     for inv_folder in ["inventory", "inventories"]:
@@ -180,14 +193,12 @@ def find_unused_vars(directory: str) -> dict[str, set[str]]:
             for _, group_value in inventory.groups.items():
                 # vars in group
                 for var_name, var_value in group_value.vars.items():
-                    parse_variable(var_name, var_value,
-                                   all_declared_vars, all_referenced_vars, path, directory)
+                    parse_variable(var_name, var_value, path, context)
                 # hosts in group
                 for host in group_value.hosts:
                     # vars in host
                     for var_name, var_value in host.vars.items():
-                        parse_variable(var_name, var_value,
-                                       all_declared_vars, all_referenced_vars, path, directory)
+                        parse_variable(var_name, var_value, path, context)
 
     # templates
     for path in get_files_in_folder(directory, "**/templates", include_ext=True):
@@ -199,22 +210,19 @@ def find_unused_vars(directory: str) -> dict[str, set[str]]:
     for path in get_files_in_folder(directory, ".", file_glob=f"*playbook*{YAML_FILE_EXTENSION_GLOB}"):
         LOGGER.debug(f"playbook {path}")
         with open(path, "r") as f:
-            check_raw_file_for_variables(
-                f.read(), all_declared_vars, all_referenced_vars, path)
+            check_raw_file_for_variables(f.read(), path, context)
 
     # tasks files
     for path in get_files_in_folder(directory, "**/tasks", YAML_FILE_EXTENSION_GLOB, True):
         LOGGER.debug(f"task file {path}")
         with open(path, "r") as f:
-            check_raw_file_for_variables(
-                f.read(), all_declared_vars, all_referenced_vars, path)
+            check_raw_file_for_variables(f.read(), path, context)
 
     # handlers files
     for path in get_files_in_folder(directory, "**/handlers", YAML_FILE_EXTENSION_GLOB, True):
         LOGGER.debug(f"handler file {path}")
         with open(path, "r") as f:
-            check_raw_file_for_variables(
-                f.read(), all_declared_vars, all_referenced_vars, path)
+            check_raw_file_for_variables(f.read(), path, context)
 
     for var_name in all_referenced_vars.keys():
         LOGGER.debug(f"removing referenced var {var_name}")
