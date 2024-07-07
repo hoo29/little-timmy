@@ -17,14 +17,14 @@ def main():
         "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
     args = parser.parse_args()
 
-    log_level = getattr(logging, args.log.upper(), None)
+    log_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(log_level, int):
-        raise ValueError(f"Invalid log level: {args.log}")
+        raise ValueError(f"Invalid log level: {args.log_level}")
     logging.basicConfig(level=log_level, format="%(message)s")
 
     LOGGER.debug("starting")
 
-    config = find_and_load_config(args.config_file_path)
+    config = find_and_load_config(args.directory, args.config_file)
 
     all_declared_vars = find_unused_vars(args.directory, config)
 
