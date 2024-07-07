@@ -1,5 +1,6 @@
-import logging
 import argparse
+import logging
+import os
 
 from .config_loader import find_and_load_config
 from .var_finder import find_unused_vars
@@ -23,17 +24,22 @@ def main():
     logging.basicConfig(level=log_level, format="%(message)s")
 
     LOGGER.debug("starting")
+    if args.directory == ".":
+        directory = os.getcwd()
+    else:
+        directory = args.directory
 
-    config = find_and_load_config(args.directory, args.config_file)
+    config = find_and_load_config(directory, args.config_file)
 
-    all_declared_vars = find_unused_vars(args.directory, config)
+    all_declared_vars = find_unused_vars(directory, config)
 
     LOGGER.debug("\n **unused vars** \n")
     if not all_declared_vars:
         LOGGER.info("no unused vars")
     # filter out vars only declared in galaxy_roles and collections
     for var_name, var_locations in all_declared_vars.items():
-        LOGGER.info(f"{var_name} at {var_locations}\n")
+        LOGGER.info(f"{var_name} at {[os.path.relpath(
+            x, directory) for x in var_locations]}\n")
 
     LOGGER.debug("finished")
 
