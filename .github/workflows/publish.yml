@@ -10,6 +10,8 @@ jobs:
     environment: release
     permissions:
       id-token: write
+      contents: read
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +26,11 @@ jobs:
 
       - name: Build
         run: python -m build
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/little_timmy-*"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
