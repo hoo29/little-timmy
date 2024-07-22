@@ -16,8 +16,10 @@ def get_test_folders(path: str):
 def test_finds_unused_vars(repo):
     with open(os.path.join(TEST_REPOS, repo, "unused_vars")) as f:
         expected = f.read().splitlines()
-
     config = find_and_load_config(os.path.join(TEST_REPOS, repo, "repo"))
     actual = find_unused_vars(os.path.join(TEST_REPOS, repo, "repo"), config)
 
-    assert bool(set(actual.keys()).intersection(set(expected)))
+    expected_len = len(expected)
+    assert expected_len == len(actual.keys())
+    assert len(set(expected).intersection(
+        set(actual.keys()))) == expected_len
