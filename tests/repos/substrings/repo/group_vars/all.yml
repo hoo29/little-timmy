@@ -1,0 +1,8 @@
+unused_var: hi
+ref_by_another: msg
+used_var: a longer {{ ref_by_another }}
+conditional: true
+var_used_by_inventory: huw
+a_var_with_: def
+host_var_from_group: lab
+unused_host_var_from_group: bab

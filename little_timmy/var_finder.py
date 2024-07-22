@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from ansible import cli, constants as C
 from ansible.inventory.manager import InventoryManager
@@ -9,6 +10,7 @@ from ansible.template import JinjaPluginIntercept
 from dataclasses import dataclass
 from glob import iglob
 from jinja2 import Environment, meta
+from typing import Any
 
 from .config_loader import Config
 
@@ -86,6 +88,7 @@ class Context():
     all_referenced_vars: dict[str, set[str]]
     config: Config
     root_dir: str
+    complied_regex: dict[str, Any]
 
 
 def get_files_in_folder(root_dir: str, folder: str, file_glob: str = "*", include_ext=False, dirs_to_exclude: list[str] = []):
@@ -128,7 +131,7 @@ def parse_variable(var_name: str, var_value: any, source: str, context: Context)
 
 def check_raw_file_for_variables(value: str, source: str, context: Context):
     for var_name in context.all_declared_vars.keys():
-        if var_name in value:
+        if re.search(context.complied_regex[var_name], value):
             existing = context.all_referenced_vars.get(var_name, set())
             existing.add(source)
             context.all_referenced_vars[var_name] = existing
@@ -142,11 +145,13 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
 
     all_declared_vars: dict[str, set[str]] = {}
     all_referenced_vars: dict[str, set[str]] = {}
+    complied_regex: dict[str, Any] = {}
     context = Context(**{
         "all_declared_vars": all_declared_vars,
         "all_referenced_vars": all_referenced_vars,
         "config": config,
-        "root_dir": directory
+        "root_dir": directory,
+        "complied_regex": complied_regex
     })
 
     # Setup dataloader and vault
@@ -155,6 +160,8 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
     loader.set_vault_secrets(vault_secrets)
     # Process all the things
+
+    # Load things that declare vars
 
     # group_vars
     for path in get_files_in_folder(directory, "**/group_vars", YAML_FILE_EXTENSION_GLOB):
@@ -199,6 +206,11 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
                     # vars in host
                     for var_name, var_value in host.vars.items():
                         parse_variable(var_name, var_value, path, context)
+
+    for var in context.all_declared_vars.keys():
+        context.complied_regex[var] = re.compile(fr"\b{re.escape(var)}\b")
+
+    # Load things that consume vars
 
     # templates
     for path in get_files_in_folder(directory, "**/templates", include_ext=True):
