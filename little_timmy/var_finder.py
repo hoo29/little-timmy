@@ -45,6 +45,7 @@ MAGIC_VAR_NAMES = {
     "ansible_role_names",
     "ansible_run_tags",
     "ansible_search_path",
+    "ansible_shell_type",
     "ansible_skip_tags",
     "ansible_ssh_common_args",
     "ansible_ssh_transfer_method",
