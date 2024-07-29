@@ -38,8 +38,8 @@ def main():
         LOGGER.info("no unused vars")
     # filter out vars only declared in galaxy_roles and collections
     for var_name, var_locations in all_declared_vars.items():
-        LOGGER.info(f"{var_name} at {[os.path.relpath(
-            x, directory) for x in var_locations]}\n")
+        LOGGER.info(f"""{var_name} at {[os.path.relpath(
+            x, directory) for x in var_locations]}\n""")
 
     LOGGER.debug("finished")
 
