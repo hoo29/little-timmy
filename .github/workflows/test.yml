@@ -25,3 +25,8 @@ jobs:
         run: pytest
         env:
           ANSIBLE_VAULT_PASSWORD_FILE: tests/ansible_vault_password
+
+      - name: E2E test
+        run: python -m little_timmy tests/repos/alternate_layout/repo
+        env:
+          ANSIBLE_VAULT_PASSWORD_FILE: tests/ansible_vault_password
