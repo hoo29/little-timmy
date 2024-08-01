@@ -5,6 +5,7 @@ import re
 from ansible import cli, constants as C
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
+from ansible.parsing.vault import AnsibleVaultError, AnsibleVaultFormatError, AnsibleVaultPasswordError
 from ansible.plugins.loader import init_plugin_loader, filter_loader, test_loader
 from ansible.template import JinjaPluginIntercept
 from dataclasses import dataclass
@@ -109,7 +110,10 @@ def get_files_in_folder(root_dir: str, folder: str, file_glob: str = "*", includ
 
 
 def parse_jinja(value: any, all_referenced_vars: dict[str, set[str]], source: str):
-    parsed = JINJA_ENV.parse(value)
+    try:
+        parsed = JINJA_ENV.parse(value)
+    except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
+        raise ValueError(f"Ansible vault error for file {source}") from err
     referenced_vars = meta.find_undeclared_variables(parsed)
     for referenced_var in referenced_vars:
         existing = all_referenced_vars.get(referenced_var, set())
@@ -136,6 +140,13 @@ def check_raw_file_for_variables(value: str, source: str, context: Context):
             existing = context.all_referenced_vars.get(var_name, set())
             existing.add(source)
             context.all_referenced_vars[var_name] = existing
+
+
+def load_data_from_file(path: str, loader: DataLoader):
+    try:
+        return loader.load_from_file(path) or {}
+    except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
+        raise ValueError(f"Ansible vault error for file {path}") from err
 
 
 def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
@@ -168,27 +179,27 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     for path in get_files_in_folder(directory, "**/group_vars", YAML_FILE_EXTENSION_GLOB):
         LOGGER.debug(f"group_var {path}")
 
-        contents = loader.load_from_file(path) or {}
+        contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
 
     # host_vars
     for path in get_files_in_folder(directory, "**/host_vars", YAML_FILE_EXTENSION_GLOB):
         LOGGER.debug(f"host_var {path}")
-        contents = loader.load_from_file(path) or {}
+        contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
     # vars
     for path in get_files_in_folder(directory, "**/vars", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"var file {path}")
-        contents = loader.load_from_file(path) or {}
+        contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
 
     # defaults
     for path in get_files_in_folder(directory, "**/defaults", YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"default {path}")
-        contents = loader.load_from_file(path) or {}
+        contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
 
