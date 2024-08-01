@@ -17,7 +17,7 @@ def main():
                         help="set the logging level (default: INFO)")
     parser.add_argument(
         "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
-    parser.add_argument("-d", "--dave-mode", default=False, type=bool,
+    parser.add_argument("-d", "--dave-mode", default=False, action=argparse.BooleanOptionalAction,
                         help="Make logging work on dave's macbook")
     args = parser.parse_args()
 
