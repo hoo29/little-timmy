@@ -30,7 +30,7 @@ skip_vars:
 
 ```text
 little-timmy -h
-usage: little-timmy [-h] [-l LOG_LEVEL] [-c CONFIG_FILE] [directory]
+usage: little-timmy [-h] [-l LOG_LEVEL] [-c CONFIG_FILE] [-d | --dave-mode | --no-dave-mode] [directory]
 
 Process a directory path
 
@@ -43,4 +43,6 @@ options:
                         set the logging level (default: INFO)
   -c CONFIG_FILE, --config-file CONFIG_FILE
                         Config file to use. By default it will search all dirs to `/` for .little-timmy
+  -d, --dave-mode, --no-dave-mode
+                        Make logging work on dave's macbook
 ```
