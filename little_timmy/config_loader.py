@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from jsonschema import validate
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger("little-timmy")
 DEFAULT_CONFIG_FILE_NAME = ".little-timmy"
 CONFIG_FILE_SCHEMA = {
     "type": "object",
@@ -17,6 +17,13 @@ CONFIG_FILE_SCHEMA = {
                 "type": "string"
             },
             "default": []
+        },
+        "skip_dirs": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "default": ["molecule", "venv", "tests"]
         }
     },
     "additionalProperties": False
@@ -26,6 +33,7 @@ CONFIG_FILE_SCHEMA = {
 @dataclass
 class Config():
     skip_vars: set[str]
+    skip_dirs: list[str]
 
 
 def load_config(path: str) -> Config:
@@ -38,8 +46,9 @@ def load_config(path: str) -> Config:
     else:
         config = {}
 
-    if "skip_vars" not in config:
-        config["skip_vars"] = []
+    for c in ["skip_vars", "skip_dirs"]:
+        if c not in config:
+            config[c] = []
     config["skip_vars"] = set(config["skip_vars"])
     return Config(**config)
 

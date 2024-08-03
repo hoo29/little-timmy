@@ -1,0 +1,13 @@
+- name: Cmd1
+  ansible.builtin.command: echo {{ used_var }}
+  changed_when: false
+
+- name: Cmd2
+  ansible.builtin.command:
+    cmd: echo {{ used_var }}
+  changed_when: false
+
+- name: Cmd2
+  ansible.builtin.command:
+    cmd: echo {{ a_var_with_s | default("abc") }}
+  changed_when: false

@@ -24,13 +24,18 @@ skip_vars:
   - vars
   - to
   - ignore
+skip_dirs:
+  - venv
+  - tests
+  - molecule
 ```
 
 ## Help
 
 ```text
 little-timmy -h
-usage: little-timmy [-h] [-l LOG_LEVEL] [-c CONFIG_FILE] [-d | --dave-mode | --no-dave-mode] [directory]
+
+usage: little-timmy [-h] [-c CONFIG_FILE] [-d | --dave-mode | --no-dave-mode] [-j | --json-output | --no-json-output] [-l LOG_LEVEL] [directory]
 
 Process a directory path
 
@@ -39,10 +44,12 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -l LOG_LEVEL, --log-level LOG_LEVEL
-                        set the logging level (default: INFO)
   -c CONFIG_FILE, --config-file CONFIG_FILE
                         Config file to use. By default it will search all dirs to `/` for .little-timmy
   -d, --dave-mode, --no-dave-mode
                         Make logging work on dave's macbook
+  -j, --json-output, --no-json-output
+                        Output results as json to stdout. Disables the stderr logger.
+  -l LOG_LEVEL, --log-level LOG_LEVEL
+                        set the logging level (default: INFO)
 ```

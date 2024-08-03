@@ -1,0 +1,8 @@
+[all:vars]
+used_inv_var2=abc
+
+[SERVERS]
+localhost used_host_var="def {{ var_used_by_inventory }}"
+
+[STORAGE]
+localhost
