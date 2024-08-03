@@ -15,18 +15,20 @@ CONFIG_FILE_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "string"
-            },
-            "default": []
+            }
         },
         "skip_dirs": {
             "type": "array",
             "items": {
                 "type": "string"
-            },
-            "default": ["molecule", "venv", "tests"]
+            }
         }
     },
     "additionalProperties": False
+}
+CONFIG_FILE_DEFAULTS = {
+    "skip_vars": set(),
+    "skip_dirs": ["molecule", "venv", "tests"]
 }
 
 
@@ -42,14 +44,13 @@ def load_config(path: str) -> Config:
             config = yaml.safe_load(f)
             if not config:
                 config = {}
-            validate(config, CONFIG_FILE_SCHEMA)
     else:
         config = {}
+    validate(config, CONFIG_FILE_SCHEMA)
 
-    for c in ["skip_vars", "skip_dirs"]:
-        if c not in config:
-            config[c] = []
-    config["skip_vars"] = set(config["skip_vars"])
+    for k, v in CONFIG_FILE_DEFAULTS.items():
+        if k not in config:
+            config[k] = v
     return Config(**config)
 
 
