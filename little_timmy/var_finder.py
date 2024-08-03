@@ -99,7 +99,7 @@ def get_files_in_folder(root_dir: str, folder: str, config: Config, file_glob: s
 
     def should_exclude(path: str):
         relative_path = os.path.dirname(os.path.relpath(path, root_dir))
-        return any(f"/{excluded_dir}/" in relative_path for excluded_dir in dirs_to_exclude)
+        return any(excluded_dir in relative_path for excluded_dir in dirs_to_exclude)
 
     return (
         f for f in iglob(f"{root_dir}/{folder}/**/{file_glob}", recursive=True)
