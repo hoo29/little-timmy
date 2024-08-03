@@ -19,6 +19,8 @@ def main():
         "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
     parser.add_argument("-d", "--dave-mode", default=False, action=argparse.BooleanOptionalAction,
                         help="Make logging work on dave's macbook")
+    parser.add_argument("-e", "--exit-success", default=False, action=argparse.BooleanOptionalAction,
+                        help="Exit 0 when unused vars are found.")
     parser.add_argument("-j", "--json-output", default=False, action=argparse.BooleanOptionalAction,
                         help="Output results as json to stdout. Disables the stderr logger.")
     parser.add_argument("-l", "--log-level", default="INFO", type=str,
@@ -66,6 +68,9 @@ def main():
         stdout_logger.critical(output)
 
     exit_code = 1
+    if args.exit_success:
+        exit_code = 0
+
     if not all_declared_vars:
         exit_code = 0
         LOGGER.debug("no unused vars")

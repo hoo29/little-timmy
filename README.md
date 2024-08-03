@@ -35,7 +35,7 @@ skip_dirs:
 ```text
 little-timmy -h
 
-usage: little-timmy [-h] [-c CONFIG_FILE] [-d | --dave-mode | --no-dave-mode] [-j | --json-output | --no-json-output] [-l LOG_LEVEL] [directory]
+usage: little-timmy [-h] [-c CONFIG_FILE] [-d | --dave-mode | --no-dave-mode] [-e | --exit-success | --no-exit-success] [-j | --json-output | --no-json-output] [-l LOG_LEVEL] [directory]
 
 Process a directory path
 
@@ -48,6 +48,8 @@ options:
                         Config file to use. By default it will search all dirs to `/` for .little-timmy
   -d, --dave-mode, --no-dave-mode
                         Make logging work on dave's macbook
+  -e, --exit-success, --no-exit-success
+                        Exit 0 when unused vars are found.
   -j, --json-output, --no-json-output
                         Output results as json to stdout. Disables the stderr logger.
   -l LOG_LEVEL, --log-level LOG_LEVEL
