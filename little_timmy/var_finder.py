@@ -157,13 +157,13 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     all_declared_vars: dict[str, set[str]] = {}
     all_referenced_vars: dict[str, set[str]] = {}
     complied_regex: dict[str, Any] = {}
-    context = Context(**{
-        "all_declared_vars": all_declared_vars,
-        "all_referenced_vars": all_referenced_vars,
-        "config": config,
-        "root_dir": directory,
-        "complied_regex": complied_regex
-    })
+    context = Context(
+        all_declared_vars,
+        all_referenced_vars,
+        config,
+        directory,
+        complied_regex
+    )
 
     # Setup dataloader and vault
     loader = DataLoader()

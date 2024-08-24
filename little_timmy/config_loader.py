@@ -27,14 +27,14 @@ CONFIG_FILE_SCHEMA = {
     "additionalProperties": False
 }
 CONFIG_FILE_DEFAULTS = {
-    "skip_vars": set(),
+    "skip_vars": [],
     "skip_dirs": ["molecule", "venv", "tests"]
 }
 
 
 @dataclass
 class Config():
-    skip_vars: set[str]
+    skip_vars: list[str]
     skip_dirs: list[str]
 
 
