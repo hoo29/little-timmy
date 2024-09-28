@@ -1,4 +1,4 @@
-name: little-timmy
+name: little-timmy-action
 author: hoo29
 description: Little Timmy will try their best to find those unused Ansible variables.
 inputs:
