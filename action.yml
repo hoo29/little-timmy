@@ -22,7 +22,7 @@ inputs:
     default: insecure-not-used
 runs:
   using: docker
-  image: github_action/Dockerfile
+  image: docker://ghcr.io/hoo29/little-timmy:main
   args:
     - ${{ inputs.directory }}
     - ${{ inputs.additional_cli_args }}
