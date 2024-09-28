@@ -16,10 +16,13 @@ inputs:
   galaxy_collection_requirements_file:
     description: Location, relative to `directory`, of the ansible galaxy collections requirements file.
     required: false
-  ansible_vault:
-    description: Optional ansible-vault password. The content will be a written to a file and ANSIBLE_VAULT_PASSWORD_FILE set to its location.
+  ansible_vault_password:
+    description: |
+      Optional ansible-vault password. The content will be a written to a 
+      file and ANSIBLE_VAULT_PASSWORD_FILE set to its location. Only used
+      by ansible if a vaulted value is found.
     required: false
-    default: insecure-not-used
+    default: replace-me-if-vault-is-used
 runs:
   using: docker
   image: docker://ghcr.io/hoo29/little-timmy:main
@@ -28,7 +31,7 @@ runs:
     - ${{ inputs.additional_cli_args }}
     - ${{ inputs.galaxy_role_requirements_file }}
     - ${{ inputs.galaxy_collection_requirements_file }}
-    - ${{ inputs.ansible_vault }}
+    - ${{ inputs.ansible_vault_password }}
 branding:
   color: blue
   icon: delete

@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run action
-        uses: hoo29/little-timmy@v1.0.0
+        uses: hoo29/little-timmy@v1
 ```
 
 Variables
@@ -49,11 +49,22 @@ inputs:
   galaxy_collection_requirements_file:
     description: Location, relative to `directory`, of the ansible galaxy collections requirements file.
     required: false
-  ansible_vault:
-    description: Optional ansible-vault password. The content will be a written to a file and ANSIBLE_VAULT_PASSWORD_FILE set to its location.
+  ansible_vault_password:
+    description: |
+      Optional ansible-vault password. The content will be a written to a 
+      file and ANSIBLE_VAULT_PASSWORD_FILE set to its location. Only used
+      by ansible if a vaulted value is found.
     required: false
-    default: insecure-not-used
+    default: replace-me-if-vault-is-used
 ```
+
+## Version and Tags
+
+The latest version can be found in [pyproject.toml](./pyproject.toml) and the
+changelog is [CHANGELOG.md](./CHANGELOG.md).
+
+The tags on this repo are used for the Github action and do not relate the published
+python module.
 
 ## Config
 
