@@ -1,0 +1,22 @@
+name: GHA test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-gha:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run action
+        uses: ./
+        with:
+          directory: ./tests/repos/github_action/repo
+          additional_cli_args: -j -e
+          galaxy_role_requirements_file: galaxy_role/role_requirements.yml
+          galaxy_collection_requirements_file: collection_requirements.yml
