@@ -14,6 +14,47 @@ little-timmy
 python3 -m little_timmy
 ```
 
+## Github Action
+
+Workflow
+
+```yaml
+name: little-timmy
+on:
+  push:
+jobs:
+  little-timmy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run action
+        uses: hoo29/little-timmy@v1.0.0
+```
+
+Variables
+
+```yaml
+inputs:
+  directory:
+    description: The root directory for your ansible
+    required: false
+    default: "."
+  additional_cli_args:
+    description: Additional CLI arguments to pass to little-timmy
+    required: false
+    default: ""
+  galaxy_role_requirements_file:
+    description: Location, relative to `directory`, of the ansible galaxy roles requirements file.
+    required: false
+  galaxy_collection_requirements_file:
+    description: Location, relative to `directory`, of the ansible galaxy collections requirements file.
+    required: false
+  ansible_vault:
+    description: Optional ansible-vault password. The content will be a written to a file and ANSIBLE_VAULT_PASSWORD_FILE set to its location.
+    required: false
+    default: insecure-not-used
+```
+
 ## Config
 
 Additional, optional configuration can be specified in a YAML configuration file named `.little-timmy`.
