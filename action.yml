@@ -1,0 +1,34 @@
+name: little-timmy
+author: hoo29
+description: Little Timmy will try their best to find those unused Ansible variables.
+inputs:
+  directory:
+    description: The root directory for your ansible
+    required: false
+    default: "."
+  additional_cli_args:
+    description: Additional CLI arguments to pass to little-timmy
+    required: false
+    default: ""
+  galaxy_role_requirements_file:
+    description: Location, relative to `directory`, of the ansible galaxy roles requirements file.
+    required: false
+  galaxy_collection_requirements_file:
+    description: Location, relative to `directory`, of the ansible galaxy collections requirements file.
+    required: false
+  ansible_vault:
+    description: Optional ansible-vault password. The content will be a written to a file and ANSIBLE_VAULT_PASSWORD_FILE set to its location.
+    required: false
+    default: insecure-not-used
+runs:
+  using: docker
+  image: github_action/Dockerfile
+  args:
+    - ${{ inputs.directory }}
+    - ${{ inputs.additional_cli_args }}
+    - ${{ inputs.galaxy_role_requirements_file }}
+    - ${{ inputs.galaxy_collection_requirements_file }}
+    - ${{ inputs.ansible_vault }}
+branding:
+  color: blue
+  icon: delete
