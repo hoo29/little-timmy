@@ -23,6 +23,6 @@ export ANSIBLE_VAULT_PASSWORD_FILE="ansible_vault_password"
 
 echo "Running little-timmy"
 # shellcheck disable=SC2086
-little-timmy $INPUT_ADDITIONAL_CLI_ARGS
+little-timmy -g $INPUT_ADDITIONAL_CLI_ARGS
 
 echo "Done"

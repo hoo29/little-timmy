@@ -21,6 +21,8 @@ def main():
                         help="Make logging work on dave's macbook")
     parser.add_argument("-e", "--exit-success", default=False, action=argparse.BooleanOptionalAction,
                         help="Exit 0 when unused vars are found.")
+    parser.add_argument("-g", "--github-action", default=False, action=argparse.BooleanOptionalAction,
+                        help="Output results for github actions.")
     parser.add_argument("-j", "--json-output", default=False, action=argparse.BooleanOptionalAction,
                         help="Output results as json to stdout. Disables the stderr logger.")
     parser.add_argument("-l", "--log-level", default="INFO", type=str,
@@ -52,16 +54,18 @@ def main():
     if args.json_output:
         output = json.dumps([{"name": k, "locations": list(v)}
                              for k, v in all_declared_vars.items()], indent=4)
-        stdout_logger = logging.getLogger("jsonresults")
-        stdout_log_handler = logging.StreamHandler(sys.stdout)
-        stdout_log_handler.setFormatter(logging.Formatter("%(message)s"))
-        stdout_logger.propagate = False
-        stdout_logger.addHandler(stdout_log_handler)
-        stdout_logger.critical(output)
+        print(output, file=sys.stdout)
     else:
         for var_name, var_locations in all_declared_vars.items():
             LOGGER.info(f"""{var_name} at {[os.path.relpath(
                 x, directory) for x in var_locations]}\n""")
+
+    if args.github_action:
+        level = "warning" if args.exit_success else "error"
+        for var_name, var_locations in all_declared_vars.items():
+            for loc in var_locations:
+                print(f"""::{level} file={loc}::{var_name}
+                      is unused""", file=sys.stderr)
 
     exit_code = 1
     if args.exit_success:
