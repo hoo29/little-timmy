@@ -64,8 +64,8 @@ def main():
         level = "warning" if args.exit_success else "error"
         for var_name, var_locations in all_declared_vars.items():
             for loc in var_locations:
-                print(f"""::{level} file={loc}::{var_name}
-                      is unused""", file=sys.stderr)
+                msg = f"::{level} file={loc}::{var_name} is unused"
+                print(msg, file=sys.stderr)
 
     exit_code = 1
     if args.exit_success:
