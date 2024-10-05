@@ -37,5 +37,6 @@ jobs:
           python -m little_timmy -e tests/repos/config_file_skip/repo
           python -m little_timmy -e tests/repos/alternate_layout/repo
           python -m little_timmy -j tests/repos/no_unused/repo
+          python -m little_timmy -g -e tests/repos/alternate_layout/repo
         env:
           ANSIBLE_VAULT_PASSWORD_FILE: tests/ansible_vault_password
