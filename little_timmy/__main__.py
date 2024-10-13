@@ -7,6 +7,7 @@ import sys
 from .config_loader import find_and_load_config
 from .var_finder import find_unused_vars
 
+VERSION = "1.1.2"
 LOGGER = logging.getLogger("little-timmy")
 
 
@@ -18,7 +19,7 @@ def main():
     parser.add_argument(
         "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
     parser.add_argument("-d", "--dave-mode", default=False, action=argparse.BooleanOptionalAction,
-                        help="Make logging work on dave's macbook")
+                        help="Make logging work on dave's macbook.")
     parser.add_argument("-e", "--exit-success", default=False, action=argparse.BooleanOptionalAction,
                         help="Exit 0 when unused vars are found.")
     parser.add_argument("-g", "--github-action", default=False, action=argparse.BooleanOptionalAction,
@@ -26,7 +27,9 @@ def main():
     parser.add_argument("-j", "--json-output", default=False, action=argparse.BooleanOptionalAction,
                         help="Output results as json to stdout. Disables the stderr logger.")
     parser.add_argument("-l", "--log-level", default="INFO", type=str,
-                        help="set the logging level (default: INFO)")
+                        help="set the logging level (default: INFO).")
+    parser.add_argument("-v", "--version", default=False, action=argparse.BooleanOptionalAction,
+                        help="Output the version.")
     args = parser.parse_args()
 
     log_level = getattr(logging, args.log_level.upper(), None)
@@ -40,6 +43,11 @@ def main():
     logging.basicConfig(level=log_level, format="%(message)s")
     if args.json_output:
         LOGGER.disabled = True
+
+    if args.version:
+        LOGGER.info(VERSION)
+        sys.exit(0)
+
     LOGGER.debug("starting")
 
     if args.directory == ".":
