@@ -2,6 +2,11 @@
 
 Change log for the little-timmy python module.
 
+## [1.1.2] - 2024/10/13
+
+- Fix `jinja2.exceptions.TemplateSyntaxError` when loading templates with custom filters by failing back to basic searching.
+- Add `-v` version output.
+
 ## [1.1.1] - 2024/10/05
 
 - Fix erroneous new line in `-g` output.
