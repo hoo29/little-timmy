@@ -14,7 +14,26 @@ little-timmy
 python3 -m little_timmy
 ```
 
-Little Timmy can find the "80%" of unused variables but due to the numerous ways variables can be declared and consumed in Ansible, some will be missed.
+Little Timmy can find the "80%" of unused variables but due to the numerous ways variables can be declared
+and consumed in Ansible, some will be missed.
+
+It should find unused variables in:
+
+- `group_vars`
+- `host_vars`
+- `vars`
+- `defaults`
+- Inventory files
+
+The above files are parsed to find variable declarations followed by a rudimentary search for their usage in
+playbooks, templates, tasks, and handler files.
+
+It will not find unused variables for:
+
+- `set_facts`
+- `register`
+- Dynamically created or referenced variables
+- Variables consumed in any custom python filters or similar
 
 ## Github Action
 
