@@ -6,11 +6,12 @@ from ansible import cli, constants as C
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import AnsibleVaultError, AnsibleVaultFormatError, AnsibleVaultPasswordError
-from ansible.plugins.loader import init_plugin_loader, filter_loader, test_loader
+from ansible.plugins.filter import AnsibleJinja2Filter
+from ansible.plugins.loader import init_plugin_loader, test_loader, Jinja2Loader
 from ansible.template import JinjaPluginIntercept
 from dataclasses import dataclass
 from glob import iglob
-from jinja2 import Environment, exceptions, meta
+from jinja2 import Environment, meta
 from typing import Any
 
 from .config_loader import Config
@@ -72,11 +73,6 @@ MAGIC_VAR_NAMES = {
 }
 YAML_FILE_EXTENSION_GLOB = "*y*ml"
 EXTERNAL_DEP_DIRS = ["galaxy_roles", "ansible_collections"]
-
-JINJA_ENV = Environment()
-JINJA_ENV.filters = JinjaPluginIntercept(JINJA_ENV.filters, filter_loader)
-JINJA_ENV.tests = JinjaPluginIntercept(JINJA_ENV.tests, test_loader)
-
 LOGGER = logging.getLogger("little-timmy")
 
 # must be run only once
@@ -90,9 +86,10 @@ class Context():
     config: Config
     root_dir: str
     complied_regex: dict[str, Any]
+    jinja_env: Environment
 
 
-def get_files_in_folder(root_dir: str, folder: str, config: Config, file_glob: str = "*", include_ext=False, dirs_to_exclude: list[str] = []):
+def get_items_in_folder(root_dir: str, sub_dir: str, config: Config, glob: str = "*", include_ext=False, dirs_to_exclude: list[str] = [], files=True):
     if not include_ext:
         dirs_to_exclude = dirs_to_exclude + EXTERNAL_DEP_DIRS
     dirs_to_exclude = dirs_to_exclude + config.skip_dirs
@@ -102,15 +99,15 @@ def get_files_in_folder(root_dir: str, folder: str, config: Config, file_glob: s
         return any(excluded_dir in relative_path for excluded_dir in dirs_to_exclude)
 
     return (
-        f for f in iglob(f"{root_dir}/{folder}/**/{file_glob}", recursive=True)
-        if os.path.isfile(f)
+        f for f in iglob(f"{root_dir}/{sub_dir}/**/{glob}", recursive=True)
+        if ((files and os.path.isfile(f)) or (not files and os.path.isdir(f)))
         and not should_exclude(f)
     )
 
 
-def parse_jinja(value: any, all_referenced_vars: dict[str, set[str]], source: str):
+def parse_jinja(value: any, all_referenced_vars: dict[str, set[str]], source: str, context: Context):
     try:
-        parsed = JINJA_ENV.parse(value)
+        parsed = context.jinja_env.parse(value)
     except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
         raise ValueError(f"Ansible vault error for file {source}") from err
     referenced_vars = meta.find_undeclared_variables(parsed)
@@ -130,7 +127,7 @@ def parse_variable(var_name: str, var_value: any, source: str, context: Context)
         existing = context.all_declared_vars.get(var_name, set())
         existing.add(source)
         context.all_declared_vars[var_name] = existing
-    parse_jinja(var_value, context.all_referenced_vars, source)
+    parse_jinja(var_value, context.all_referenced_vars, source, context)
 
 
 def check_raw_file_for_variables(value: str, source: str, context: Context):
@@ -154,6 +151,27 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     if directory.endswith("/"):
         directory = directory[:-1]
 
+    # Setup dataloader and vault
+    loader = DataLoader()
+    vault_ids = C.DEFAULT_VAULT_IDENTITY_LIST
+    vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
+    loader.set_vault_secrets(vault_secrets)
+
+    # Setup jinja env
+    plugin_folders = get_items_in_folder(
+        directory, ".", config, "filter_plugins", include_ext=True, files=False)
+    jinja_env = Environment()
+    jinja_env.filters = JinjaPluginIntercept(jinja_env.filters, Jinja2Loader(
+        'FilterModule',
+        'ansible.plugins.filter',
+        C.DEFAULT_FILTER_PLUGIN_PATH +
+        [os.path.abspath(x) for x in plugin_folders],
+        'filter_plugins',
+        AnsibleJinja2Filter
+    ))
+    jinja_env.tests = JinjaPluginIntercept(jinja_env.tests, test_loader)
+
+    # Setup context
     all_declared_vars: dict[str, set[str]] = {}
     all_referenced_vars: dict[str, set[str]] = {}
     complied_regex: dict[str, Any] = {}
@@ -162,20 +180,16 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
         all_referenced_vars,
         config,
         directory,
-        complied_regex
+        complied_regex,
+        jinja_env
     )
 
-    # Setup dataloader and vault
-    loader = DataLoader()
-    vault_ids = C.DEFAULT_VAULT_IDENTITY_LIST
-    vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
-    loader.set_vault_secrets(vault_secrets)
     # Process all the things
 
     # Load things that declare vars
 
     # group_vars
-    for path in get_files_in_folder(directory, "**/group_vars", config, YAML_FILE_EXTENSION_GLOB):
+    for path in get_items_in_folder(directory, "**/group_vars", config, YAML_FILE_EXTENSION_GLOB):
         LOGGER.debug(f"group_var {path}")
 
         contents = load_data_from_file(path, loader)
@@ -183,20 +197,20 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
             parse_variable(var_name, var_value, path, context)
 
     # host_vars
-    for path in get_files_in_folder(directory, "**/host_vars", config, YAML_FILE_EXTENSION_GLOB):
+    for path in get_items_in_folder(directory, "**/host_vars", config, YAML_FILE_EXTENSION_GLOB):
         LOGGER.debug(f"host_var {path}")
         contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
     # vars
-    for path in get_files_in_folder(directory, "**/vars", config, YAML_FILE_EXTENSION_GLOB, include_ext=True):
+    for path in get_items_in_folder(directory, "**/vars", config, YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"var file {path}")
         contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
             parse_variable(var_name, var_value, path, context)
 
     # defaults
-    for path in get_files_in_folder(directory, "**/defaults", config, YAML_FILE_EXTENSION_GLOB, include_ext=True):
+    for path in get_items_in_folder(directory, "**/defaults", config, YAML_FILE_EXTENSION_GLOB, include_ext=True):
         LOGGER.debug(f"default {path}")
         contents = load_data_from_file(path, loader)
         for var_name, var_value in contents.items():
@@ -204,7 +218,7 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
 
     # inventory
     for inv_folder in ["inventory", "inventories"]:
-        for path in get_files_in_folder(directory, inv_folder, config, dirs_to_exclude=["group_vars", "host_vars", "files"]):
+        for path in get_items_in_folder(directory, inv_folder, config, dirs_to_exclude=["group_vars", "host_vars", "files"]):
             LOGGER.debug(f"inv file {path}")
             inventory = InventoryManager(loader=loader, sources=path)
             # groups
@@ -224,29 +238,25 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     # Load things that consume vars
 
     # templates
-    for path in get_files_in_folder(directory, "**/templates", config, include_ext=True):
+    for path in get_items_in_folder(directory, "**/templates", config, include_ext=True):
         LOGGER.debug(f"template file {path}")
         with open(path, "r") as f:
-            contents = f.read()
-            try:
-                parse_jinja(contents, all_referenced_vars, path)
-            except exceptions.TemplateSyntaxError:
-                check_raw_file_for_variables(contents, path, context)
+            parse_jinja(f.read(), all_referenced_vars, path, context)
 
     # playbooks
-    for path in get_files_in_folder(directory, ".", config, f"*playbook*{YAML_FILE_EXTENSION_GLOB}"):
+    for path in get_items_in_folder(directory, ".", config, f"*playbook*{YAML_FILE_EXTENSION_GLOB}"):
         LOGGER.debug(f"playbook {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(f.read(), path, context)
 
     # tasks files
-    for path in get_files_in_folder(directory, "**/tasks", config, YAML_FILE_EXTENSION_GLOB, True):
+    for path in get_items_in_folder(directory, "**/tasks", config, YAML_FILE_EXTENSION_GLOB, True):
         LOGGER.debug(f"task file {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(f.read(), path, context)
 
     # handlers files
-    for path in get_files_in_folder(directory, "**/handlers", config, YAML_FILE_EXTENSION_GLOB, True):
+    for path in get_items_in_folder(directory, "**/handlers", config, YAML_FILE_EXTENSION_GLOB, True):
         LOGGER.debug(f"handler file {path}")
         with open(path, "r") as f:
             check_raw_file_for_variables(f.read(), path, context)
