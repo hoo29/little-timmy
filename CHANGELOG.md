@@ -2,6 +2,11 @@
 
 Change log for the little-timmy python module.
 
+## [1.2.0] - 2024/10/13
+
+- Add support for using custom filter plugins.
+- Remove basic filter fallback added in 1.1.2 to highlight future issues.
+
 ## [1.1.2] - 2024/10/13
 
 - Fix `jinja2.exceptions.TemplateSyntaxError` when loading templates with custom filters by failing back to basic searching.
