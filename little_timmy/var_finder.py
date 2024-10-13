@@ -10,7 +10,7 @@ from ansible.plugins.loader import init_plugin_loader, filter_loader, test_loade
 from ansible.template import JinjaPluginIntercept
 from dataclasses import dataclass
 from glob import iglob
-from jinja2 import Environment, meta
+from jinja2 import Environment, exceptions, meta
 from typing import Any
 
 from .config_loader import Config
@@ -227,7 +227,11 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     for path in get_files_in_folder(directory, "**/templates", config, include_ext=True):
         LOGGER.debug(f"template file {path}")
         with open(path, "r") as f:
-            parse_jinja(f.read(), all_referenced_vars, path)
+            contents = f.read()
+            try:
+                parse_jinja(contents, all_referenced_vars, path)
+            except exceptions.TemplateSyntaxError:
+                check_raw_file_for_variables(contents, path, context)
 
     # playbooks
     for path in get_files_in_folder(directory, ".", config, f"*playbook*{YAML_FILE_EXTENSION_GLOB}"):
