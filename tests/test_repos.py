@@ -1,8 +1,8 @@
 import os
 import pytest
-
 from little_timmy.var_finder import find_unused_vars
 from little_timmy.config_loader import find_and_load_config
+
 
 TEST_REPOS = os.path.join("tests", "repos")
 
@@ -19,6 +19,10 @@ def test_finds_unused_vars(repo):
     config = find_and_load_config(os.path.join(TEST_REPOS, repo, "repo"))
     actual = find_unused_vars(os.path.join(TEST_REPOS, repo, "repo"), config)
 
+    _actual = list(actual.keys())
+    _actual.sort()
+    expected.sort()
+    assert _actual == expected
     expected_len = len(expected)
     assert expected_len == len(actual.keys())
     assert len(set(expected).intersection(

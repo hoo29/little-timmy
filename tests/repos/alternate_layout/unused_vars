@@ -2,3 +2,7 @@ unused_servers_var
 unused_var
 unused_host_var_b
 unused_inv_var
+unused_dict
+unused_reg
+unused_embedded
+unused_fact_var

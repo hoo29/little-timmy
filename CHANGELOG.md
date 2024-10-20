@@ -2,6 +2,13 @@
 
 Change log for the little-timmy python module.
 
+## [2.0.0] - 2024/10/20
+
+Now parses all files instead of performing basic regex searches.
+
+- Add support for variables declared in vars, set_facts, and register.
+- Reduce runtime by about 50%.
+
 ## [1.2.0] - 2024/10/13
 
 - Add support for using custom filter plugins.

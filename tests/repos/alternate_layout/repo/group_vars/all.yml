@@ -1,5 +1,19 @@
+used_arr:
+  - 1
+  - b
+  - c
+unused_dict:
+  - name: a
+    val: |
+      {{ used_arr }}
+used_dict:
+  abc_def: 1
+dict_var_prefix: abc
 unused_var: hi
 ref_by_another: msg
 used_var: a longer {{ ref_by_another }}
 conditional: true
 var_used_by_inventory: huw
+
+used_in_assert1: 5
+used_in_assert2: 10
