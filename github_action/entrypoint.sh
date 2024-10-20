@@ -13,11 +13,6 @@ if [ -n "$INPUT_GALAXY_COLLECTION_REQUIREMENTS_FILE" ]; then
     ansible-galaxy collection install -f -r "$INPUT_GALAXY_COLLECTION_REQUIREMENTS_FILE" -p .
 fi
 
-if [ -n "$INPUT_GALAXY_COLLECTION_REQUIREMENTS_FILE" ]; then
-    echo "Installing ansible galaxy collections from $INPUT_GALAXY_COLLECTION_REQUIREMENTS_FILE"
-    ansible-galaxy collection install -f -r "$INPUT_GALAXY_COLLECTION_REQUIREMENTS_FILE" -p .
-fi
-
 printenv INPUT_ANSIBLE_VAULT_PASSWORD >ansible_vault_password
 export ANSIBLE_VAULT_PASSWORD_FILE="ansible_vault_password"
 

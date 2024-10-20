@@ -26,7 +26,7 @@ jobs:
         run: pip install . .[tests]
 
       - name: Run tests
-        run: pytest
+        run: pytest -vv
         env:
           ANSIBLE_VAULT_PASSWORD_FILE: tests/ansible_vault_password
 

@@ -1,1 +1,37 @@
-# empty file
+fun_nested_var:
+  - text: access_log syslog;
+  - text: error_log syslog;
+  - text: |-
+      map not_a_valid_item {
+        default upgrade;
+        '' close;
+      }
+  - text: sendfile on;
+  - text: ""
+  - text: |-
+      upstream upstream_server {
+        server "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:port";
+      }
+  - text: |-
+      upstream websocket {
+        server "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}:port";
+      }
+
+_nested_embed:
+  - modifier: ~ ^/
+    directives:
+      - text: resolver 127.0.0.11 valid=5s;
+      - text: set something;
+      - text: |
+          if ($http_referer ~ /a-url/?$) {
+            proxy_pass $some_nginx_var;
+          }
+
+unused_embedded:
+  - directives:
+      - text: listen 8443 ssl;
+    locations: |
+      {{
+      _nested_embed +
+      ('abc' if fun_nested_var is defined else [])
+      }}

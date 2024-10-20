@@ -6,3 +6,25 @@
   ansible.builtin.command:
     cmd: echo {{ used_var }}
   changed_when: false
+
+- name: Cmd3
+  ansible.builtin.command:
+    cmd: echo {{ used_var }} {{ item }}
+  changed_when: false
+  loop:
+    - 1
+    - 2
+    - 3
+  loop_control:
+    index_var: unused_index_var
+
+- name: Cmd4
+  ansible.builtin.command:
+    cmd: echo {{ used_var }} {{ item }} {{ used_index_var }}
+  changed_when: false
+  loop:
+    - 1
+    - 2
+    - 3
+  loop_control:
+    index_var: used_index_var

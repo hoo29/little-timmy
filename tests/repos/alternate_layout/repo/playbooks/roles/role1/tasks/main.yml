@@ -1,8 +1,26 @@
 - name: Cmd1
   ansible.builtin.command: echo {{ used_var }}
+  register: used_reg
   changed_when: false
 
 - name: Cmd2
   ansible.builtin.command:
-    cmd: echo {{ used_var }}
+    cmd: echo {{ used_var }} {{ used_reg }}
+  register: unused_reg
   changed_when: false
+
+- name: Assert
+  ansible.builtin.assert:
+    that: 1 < used_in_assert1
+  changed_when: false
+
+- name: Assert2
+  ansible.builtin.assert:
+    that:
+      - 1 < used_in_assert1
+      - used_in_assert2 > used_in_assert1
+  changed_when: false
+
+- name: Fun AST
+  ansible.builtin.set_fact:
+    unused_fact_var: "{{ lookup(used_dict, '{{ dict_var_prefix }}_def') }}"

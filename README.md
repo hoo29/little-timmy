@@ -14,26 +14,23 @@ little-timmy
 python3 -m little_timmy
 ```
 
-Little Timmy can find the "80%" of unused variables but due to the numerous ways variables can be declared
-and consumed in Ansible, some will be missed.
-
-It should find unused variables in:
+It will find most unused variables in:
 
 - `group_vars`
 - `host_vars`
 - `vars`
 - `defaults`
+- `set_facts` - when not defined as key value pairs on a single line
+- `register`
 - Inventory files
 
-The above files are parsed to find variable declarations followed by a rudimentary search for their usage in
-playbooks, templates, tasks, and handler files.
+It is unlikely to find unused variables for:
 
-It will not find unused variables for:
-
-- `set_facts`
-- `register`
-- Dynamically created or referenced variables
+- Complex, dynamically referenced or created variables
 - Variables consumed in any custom python filters or similar
+- Non standard(ish) directory layouts
+
+Please raise issues with ideas or contributions with improvements!
 
 ## Github Action
 
@@ -49,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run action
-        uses: hoo29/little-timmy@v1-action
+        uses: hoo29/little-timmy@v2-action
 ```
 
 Variables
@@ -81,8 +78,7 @@ inputs:
 
 ## Version and Tags
 
-The latest version can be found in [pyproject.toml](./pyproject.toml) and the
-changelog is [CHANGELOG.md](./CHANGELOG.md).
+The latest version can be found in [CHANGELOG.md](./CHANGELOG.md).
 
 The tags on this repo are used for the Github action and do not relate the published
 python module.
@@ -92,15 +88,50 @@ python module.
 Additional, optional configuration can be specified in a YAML configuration file named `.little-timmy`.
 The file can be located at any level between the current working directory and `/`.
 
-```yaml
-skip_vars:
-  - vars
-  - to
-  - ignore
-skip_dirs:
-  - venv
-  - tests
-  - molecule
+The schema for the file is:
+
+```python
+{
+    "type": "object",
+    "properties": {
+        "galaxy_dirs": {
+            "description": "Directories where ansible-galaxy collections and roles have been installed. Must be within the directory being scanned.",
+            "default": ["ansible_collections", "galaxy_roles"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "skip_vars": {
+            "description": "Variables to skip checking.",
+            "default": [],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "skip_dirs": {
+            "description": "Directories to skip loading files from.",
+            "default": ["molecule", "venv", "tests"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "extra_jinja_context_keys": {
+            "description": """
+            Locations where there is already a jinja context for evaluation e.g. `when` and `assert.that`.
+            Does not require module FQCN. Values are added to .config_loader.DEFAULT_JINJA_CONTEXT_KEYS.
+            """,
+            "default": [],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "additionalProperties": False
+}
 ```
 
 ## Help

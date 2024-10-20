@@ -6,3 +6,13 @@
   ansible.builtin.command:
     cmd: echo {{ used_var }}
   changed_when: false
+
+- name: Set fact 1
+  ansible.builtin.set_fact:
+    used_fact_var: 1
+    unused_fact_var: 2
+
+- name: Cmd3
+  ansible.builtin.command:
+    cmd: echo {{ used_fact_var }}
+  changed_when: false
