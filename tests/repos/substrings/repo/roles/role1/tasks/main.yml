@@ -11,3 +11,14 @@
   ansible.builtin.command:
     cmd: echo {{ a_var_with_s | default("abc") }}
   changed_when: false
+
+- name: Synchronize to item on remote host
+  ansible.builtin.command:
+    cmd: echo {{ item }}
+  changed_when: false
+  loop: >
+    {{
+      [
+        { "src": "{{ role1_used_cond_expr_var_1 }}", "destination": "{{ role1_used_cond_expr_var_2 }}" } if role1_used_outer_cond_expr_var_3 | bool else None,
+      ] | reject('==', None) | list
+    }}
