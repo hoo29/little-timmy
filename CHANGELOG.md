@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [2.1.0] - 2024/10/31
+
+- Add support for CondExpr jinja parsing.
+
 ## [2.0.2] - 2024/10/31
 
 - Fix parsing roles which are called "defaults".

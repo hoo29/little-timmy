@@ -6,12 +6,31 @@ from jinja2 import exceptions, meta, nodes, Template
 from .config_loader import Context
 
 
+def walk_template_ast_arg(cur_node: any, context: Context):
+    more_vars: set[str] = set()
+    for arg in cur_node.args:
+        if isinstance(arg, nodes.Const):
+            more_vars = more_vars.union(meta.find_undeclared_variables(
+                context.jinja_env.parse(arg.value)))
+    return more_vars
+
+
+def walk_template_ast_items(cur_node: any, context: Context):
+    more_vars: set[str] = set()
+    for item in cur_node.items:
+        if isinstance(item, nodes.CondExpr):
+            for expr in [x for x in [item.expr1, item.expr2] if isinstance(x, nodes.Const)]:
+                more_vars = more_vars.union(meta.find_undeclared_variables(
+                    context.jinja_env.parse(expr.value)))
+    return more_vars
+
+
 def walk_template_ast(value: Template, context: Context):
     """
     When meta.find_undeclared_variables says "all variables are returned"
     it really means "top level" variables. Args to the various plugins
     are not always evaluated and items can be missed. This function manually 
-    checks all const args in the AST for variable use.
+    checks other areas of interest in the AST.
     """
     more_vars: set[str] = set()
     if "body" not in value.fields or not isinstance(value.body, list):
@@ -24,10 +43,11 @@ def walk_template_ast(value: Template, context: Context):
         while node_list:
             cur_node = node_list.pop()
             if "args" in cur_node.fields and isinstance(cur_node.args, list):
-                for arg in cur_node.args:
-                    if isinstance(arg, nodes.Const):
-                        more_vars = more_vars.union(meta.find_undeclared_variables(
-                            context.jinja_env.parse(arg.value)))
+                more_vars = walk_template_ast_arg(cur_node, context)
+
+            if "items" in cur_node.fields and isinstance(cur_node.items, list):
+                more_vars = walk_template_ast_items(cur_node, context)
+
             if "node" in cur_node.fields:
                 node_list.append(cur_node.node)
 
