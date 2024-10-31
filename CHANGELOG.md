@@ -5,6 +5,7 @@ Change log for the little-timmy python module.
 ## [2.1.0] - 2024/10/31
 
 - Add support for CondExpr jinja parsing.
+- Add limited support for finding strings used as index lookups. e.g. finding primary in `when: hostvars[item]['primary']`
 
 ## [2.0.2] - 2024/10/31
 
