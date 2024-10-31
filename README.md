@@ -24,11 +24,14 @@ It will find most unused variables in:
 - `register`
 - Inventory files
 
-It is unlikely to find unused variables for:
+It is unlikely to find unused variables or may generate false positives for:
 
 - Complex, dynamically referenced or created variables
+- Variables referenced by YAML anchors
 - Variables consumed in any custom python filters or similar
 - Non standard(ish) directory layouts
+
+False positives can be ignored with a config file detailed in the [Config](#config) section.
 
 Please raise issues with ideas or contributions with improvements!
 

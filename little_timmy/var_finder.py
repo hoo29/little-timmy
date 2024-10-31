@@ -87,37 +87,51 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
     # Process all the things
 
     # group_vars
-    for path in get_items_in_folder(directory, f"{directory}/**/group_vars/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/group_vars/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"group_var {path}")
 
         contents = load_data_from_file(path, loader)
+        if not isinstance(contents, dict):
+            continue
         for var_name, var_value in contents.items():
             parse_yaml_variable(var_name, var_value, path, context)
 
     # host_vars
-    for path in get_items_in_folder(directory, f"{directory}/**/host_vars/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/host_vars/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"host_var {path}")
         contents = load_data_from_file(path, loader)
+        if not isinstance(contents, dict):
+            continue
         for var_name, var_value in contents.items():
             parse_yaml_variable(var_name, var_value, path, context)
 
     # vars
-    for path in get_items_in_folder(directory, f"{directory}/**/vars/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, include_ext=True, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/vars/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, include_ext=True, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"var file {path}")
         contents = load_data_from_file(path, loader)
+        if not isinstance(contents, dict):
+            continue
         for var_name, var_value in contents.items():
             parse_yaml_variable(var_name, var_value, path, context)
 
     # defaults
-    for path in get_items_in_folder(directory, f"{directory}/**/defaults/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, include_ext=True, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/defaults/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, include_ext=True, dirs_to_exclude=config.skip_dirs):
+        # exclude
         LOGGER.debug(f"default {path}")
         contents = load_data_from_file(path, loader)
+        if not isinstance(contents, dict):
+            continue
         for var_name, var_value in contents.items():
             parse_yaml_variable(var_name, var_value, path, context)
 
     # inventory
     for inv_folder in ["inventory", "inventories"]:
-        for path in get_items_in_folder(directory, f"{directory}/{inv_folder}/**/*", config.galaxy_dirs, dirs_to_exclude=config.skip_dirs + ["group_vars", "host_vars", "files", "templates"]):
+        for path in get_items_in_folder(directory, f"{directory}/{inv_folder}/**/*",
+                                        config.galaxy_dirs, dirs_to_exclude=config.skip_dirs + ["group_vars", "host_vars", "files", "templates"]):
             LOGGER.debug(f"inv file {path}")
             inventory = InventoryManager(loader=loader, sources=path)
             # groups
@@ -133,31 +147,36 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
                             var_name, var_value, path, context)
 
     # playbooks
-    for path in get_items_in_folder(directory,  f"{directory}/**/*playbook{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory,  f"{directory}/**/*playbook{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"playbook {path}")
         contents = load_data_from_file(path, loader)
         parse_yaml_list(contents, path, context)
 
     # tasks files
-    for path in get_items_in_folder(directory, f"{directory}/**/tasks/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/tasks/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"task file {path}")
         contents = load_data_from_file(path, loader)
         parse_yaml_list(contents, path, context)
 
     # handlers files
-    for path in get_items_in_folder(directory, f"{directory}/**/handlers/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/handlers/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"handler file {path}")
         contents = load_data_from_file(path, loader)
         parse_yaml_list(contents, path, context)
 
     # templates
-    for path in get_items_in_folder(directory, f"{directory}/**/templates/**/*", config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/**/templates/**/*",
+                                    config.galaxy_dirs, True, dirs_to_exclude=config.skip_dirs):
         LOGGER.debug(f"template file {path}")
         with open(path, "r") as f:
             parse_jinja(f.read(), path, context)
 
     # check local molecule folder for variable consumption only
-    for path in get_items_in_folder(directory, f"{directory}/molecule/**/{YAML_FILE_EXTENSION_GLOB}", config.galaxy_dirs):
+    for path in get_items_in_folder(directory, f"{directory}/molecule/**/{YAML_FILE_EXTENSION_GLOB}",
+                                    config.galaxy_dirs):
         LOGGER.debug(f"molecule file {path}")
         contents = load_data_from_file(path, loader)
         parse_yaml_list(contents, path, context)

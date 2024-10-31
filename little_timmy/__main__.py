@@ -7,7 +7,7 @@ import sys
 from .config_loader import find_and_load_config
 from .var_finder import find_unused_vars
 
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 LOGGER = logging.getLogger("little-timmy")
 
 
@@ -54,6 +54,9 @@ def main():
         directory = os.getcwd()
     else:
         directory = args.directory
+
+    if directory.endswith("/"):
+        directory = directory[:-1]
 
     config = find_and_load_config(directory, args.config_file)
     all_declared_vars = find_unused_vars(directory, config)
