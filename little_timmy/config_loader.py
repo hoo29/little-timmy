@@ -156,8 +156,10 @@ def find_and_load_config(root_dir: str, absolute_path: str = "") -> Config:
         return load_config(absolute_path)
 
     parts = os.path.split(root_dir)
+
     while parts[1]:
         full_config_path = os.path.join(*parts, DEFAULT_CONFIG_FILE_NAME)
+        LOGGER.debug(f"looking for config file at {full_config_path}")
         if os.path.isfile(full_config_path):
             LOGGER.debug(f"loading found config file {full_config_path}")
             return load_config(full_config_path)

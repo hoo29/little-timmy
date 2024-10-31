@@ -16,3 +16,8 @@
   ansible.builtin.command:
     cmd: echo {{ used_fact_var }}
   changed_when: false
+
+- name: Cmd4
+  ansible.builtin.command:
+    cmd: echo {{ role1_used_var }}
+  changed_when: false
