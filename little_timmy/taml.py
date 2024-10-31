@@ -42,6 +42,15 @@ def walk_template_ast(value: Template, context: Context):
         node_list = body.nodes
         while node_list:
             cur_node = node_list.pop()
+            if (all(field in cur_node.fields for field in ["arg", "ctx"])
+                and isinstance(cur_node.arg, nodes.Const)
+                    and cur_node.ctx == "load" and isinstance(cur_node.arg.value, str)):
+                value = cur_node.arg.value
+                if "{{" not in value:
+                    value = "{{ " + value + " }}"
+                more_vars = more_vars.union(meta.find_undeclared_variables(
+                    context.jinja_env.parse(value)))
+
             if "args" in cur_node.fields and isinstance(cur_node.args, list):
                 more_vars = walk_template_ast_arg(cur_node, context)
 

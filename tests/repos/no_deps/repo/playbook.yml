@@ -29,3 +29,14 @@
       delegate_to: localhost
       ansible.builtin.debug:
         var: used_inv_var2
+
+    - name: Set fact on primary nodes
+      ansible.builtin.set_fact:
+        primary: true
+
+    - name: Group the primary nodes together
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        groups: primary_node
+      when: hostvars[item]['primary']
+      with_items: "{{ ansible_play_hosts }}"
