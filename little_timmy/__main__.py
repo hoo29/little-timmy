@@ -68,8 +68,8 @@ def main():
         print(output, file=sys.stdout)
     else:
         for var_name, var_locations in all_declared_vars.items():
-            LOGGER.info(f"""{var_name} at {[os.path.relpath(
-                x, directory) for x in var_locations]}\n""")
+            print(f"""{var_name} at {[os.path.relpath(
+                x, directory) for x in var_locations]}\n""", file=sys.stdout)
 
     if args.github_action:
         level = "warning" if args.exit_success else "error"
