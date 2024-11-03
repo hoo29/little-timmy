@@ -7,7 +7,7 @@ import sys
 from .config_loader import find_and_load_config
 from .var_finder import find_unused_vars
 
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 LOGGER = logging.getLogger("little-timmy")
 
 
