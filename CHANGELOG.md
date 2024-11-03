@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [2.1.1] - 2024/11/03
+
+- Fix sending non json result output to stdout instead of stderr @leventyalcin
+
 ## [2.1.0] - 2024/10/31
 
 - Add support for CondExpr jinja parsing.
