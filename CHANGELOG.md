@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [2.2.0] - 2025/01/25
+
+- Skip scanning dynamic inventory files because they generate false positives.
+
 ## [2.1.1] - 2024/11/03
 
 - Fix sending non json result output to stdout instead of stderr @leventyalcin
