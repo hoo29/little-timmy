@@ -133,6 +133,9 @@ def find_unused_vars(directory: str, config: Config) -> dict[str, set[str]]:
         for path in get_items_in_folder(directory, f"{directory}/{inv_folder}/**/*",
                                         config.galaxy_dirs, dirs_to_exclude=config.skip_dirs + ["group_vars", "host_vars", "files", "templates"]):
             LOGGER.debug(f"inv file {path}")
+            if "dynamic" in os.path.basename(path):
+                LOGGER.debug(f"skipping dynamic inventory file {path}")
+                continue
             inventory = InventoryManager(loader=loader, sources=path)
             # groups
             for _, group_value in inventory.groups.items():
