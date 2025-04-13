@@ -1,0 +1,4 @@
+var_same_value:1#["group_vars/LEVEL3/main.yml", "host_vars/localhost/main.yml", "inventory/group_vars/all.yml", "group_vars/LEVEL2.yaml", "group_vars/LEVEL3/another.yml", "group_vars/all.yml", "group_vars/LEVEL1.yml"]
+idk_anymore:5#["inventory/group_vars/LEVEL2/main.yml", "group_vars/LEVEL1.yml"]
+var_sometimes_diff:1#["group_vars/LEVEL1.yml"]
+var_sometimes_diff:2#["group_vars/LEVEL4.yaml", "group_vars/LEVEL3/main.yml"]

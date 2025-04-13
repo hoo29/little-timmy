@@ -1,0 +1,6 @@
+var_diff_value: 2
+var_sometimes_diff: 1
+var_same_value: 1
+play_group_var_l1: 4
+idk_anymore: 5
+another_ref_var: "{{ play_group_var_l1 }}"
