@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run action
-        uses: hoo29/little-timmy@v2-action
+        uses: hoo29/little-timmy@v3-action
 ```
 
 Variables
