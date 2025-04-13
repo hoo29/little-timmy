@@ -3,3 +3,4 @@ used_var: a longer {{ ref_by_another }}
 conditional: true
 var_used_by_inventory: huw
 host_var_from_group: lab
+dns: 1.1.1.1

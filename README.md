@@ -1,6 +1,6 @@
 # little-timmy
 
-Little Timmy will try their best to find those unused Ansible variables.
+Little Timmy will try their best to find those unused and duplicated Ansible variables.
 
 ```sh
 cd repo/ansible/plays
@@ -14,15 +14,18 @@ little-timmy
 python3 -m little_timmy
 ```
 
-It will find most unused variables in:
+It will find
 
-- `group_vars`
-- `host_vars`
-- `vars`
-- `defaults`
-- `set_facts` - when not defined as key value pairs on a single line
-- `register`
-- Inventory files
+- Most unused variables in:
+  - `group_vars`
+  - `host_vars`
+  - `vars`
+  - `defaults`
+  - `set_facts` - when not defined as key value pairs on a single line
+  - `register`
+  - Inventory files
+- Duplicated variables that have the same value at different group levels.
+- Duplicated variables that have been defined multiple times at the same group level.
 
 It is unlikely to find unused variables or may generate false positives for:
 
@@ -33,7 +36,7 @@ It is unlikely to find unused variables or may generate false positives for:
 
 False positives can be ignored with a config file detailed in the [Config](#config) section.
 
-Please raise issues with ideas or contributions with improvements!
+Please raise issues with any problems, ideas, or contributions with improvements!
 
 ## Github Action
 
@@ -113,6 +116,14 @@ The schema for the file is:
                 "type": "string"
             }
         },
+        "skip_vars_duplicates_substrings": {
+            "description": "Variables containing these substring will not be checked for duplication. This is in addition to skip_vars.",
+            "default": ["pass", "vault"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "skip_dirs": {
             "description": "Directories to skip loading files from.",
             "default": ["molecule", "venv", "tests"],
@@ -155,6 +166,8 @@ options:
                         Config file to use. By default it will search all dirs to `/` for .little-timmy
   -d, --dave-mode, --no-dave-mode
                         Make logging work on dave's macbook.
+  -du, --duplicated-vars, --no-duplicated-vars
+                        Find duplicated variables.
   -e, --exit-success, --no-exit-success
                         Exit 0 when unused vars are found.
   -g, --github-action, --no-github-action
@@ -163,6 +176,8 @@ options:
                         Output results as json to stdout. Disables the stderr logger.
   -l LOG_LEVEL, --log-level LOG_LEVEL
                         set the logging level (default: INFO).
+  -u, --unused-vars, --no-unused-vars
+                        Find unused variables.
   -v, --version, --no-version
                         Output the version.
 ```

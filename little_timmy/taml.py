@@ -4,6 +4,7 @@ from ansible.parsing.vault import AnsibleVaultError, AnsibleVaultFormatError, An
 from jinja2 import exceptions, meta, nodes, Template
 
 from .config_loader import Context
+from .utils import skip_var
 
 
 def walk_template_ast_arg(cur_node: any, context: Context):
@@ -111,7 +112,7 @@ def walk_variable(var_value: any, source: str, context: Context):
 
 
 def parse_yaml_variable(var_name: str, var_value: any, source: str, context: Context):
-    if var_name.startswith("ansible_") or var_name in context.config.magic_vars or var_name in context.config.skip_vars:
+    if skip_var(var_name, context.config.magic_vars, context.config.skip_vars):
         return
     add_declared_var(var_name, source, context)
     walk_variable(var_value, source, context)

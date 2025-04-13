@@ -1,0 +1,24 @@
+all:
+  vars:
+    var_same_value: 1
+
+LEVEL1:
+  vars:
+    var_sometimes_diff: 2
+    another_var_ref: "{{ var_sometimes_diff }}"
+  children:
+    LEVEL2:
+      vars:
+        in_the_inventory_file: 5
+        idk_anymore: 5
+      children:
+        LEVEL3:
+          hosts:
+            localhost:
+        LEVEL4:
+          hosts:
+            localhost:
+              in_the_inventory_file_host_var: 10
+        NOT_USED_GROUP:
+          vars:
+            NOT_USED_GROUP_VAR: 1

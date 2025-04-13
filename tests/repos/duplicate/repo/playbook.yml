@@ -1,0 +1,30 @@
+- name: Duplicates
+  hosts: all
+  become: false
+  gather_facts: false
+  connection: local
+  pre_tasks:
+    - name: Pre
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: var_diff_value
+  tasks:
+    - name: Debug1
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: var_sometimes_diff
+
+    - name: Debug2
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: play_group_var_l1
+
+    - name: Debug3
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: in_the_inventory_file
+
+    - name: Debug4
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: idk_anymore

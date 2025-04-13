@@ -4,11 +4,17 @@ import json
 import os
 import sys
 
-from .config_loader import find_and_load_config
-from .var_finder import find_unused_vars
+from ansible.plugins.loader import init_plugin_loader
 
-VERSION = "2.2.0"
+from .config_loader import setup_run
+from .duplicated_var_finder import find_duplicated_vars
+from .unused_var_finder import find_unused_vars
+
+VERSION = "3.0.0"
 LOGGER = logging.getLogger("little-timmy")
+
+# must be run only once
+init_plugin_loader()
 
 
 def main():
@@ -20,6 +26,8 @@ def main():
         "-c", "--config-file", type=str, help="Config file to use. By default it will search all dirs to `/` for .little-timmy")
     parser.add_argument("-d", "--dave-mode", default=False, action=argparse.BooleanOptionalAction,
                         help="Make logging work on dave's macbook.")
+    parser.add_argument("-du", "--duplicated-vars", default=True, action=argparse.BooleanOptionalAction,
+                        help="Find duplicated variables.")
     parser.add_argument("-e", "--exit-success", default=False, action=argparse.BooleanOptionalAction,
                         help="Exit 0 when unused vars are found.")
     parser.add_argument("-g", "--github-action", default=False, action=argparse.BooleanOptionalAction,
@@ -28,6 +36,8 @@ def main():
                         help="Output results as json to stdout. Disables the stderr logger.")
     parser.add_argument("-l", "--log-level", default="INFO", type=str,
                         help="set the logging level (default: INFO).")
+    parser.add_argument("-u", "--unused-vars", default=True, action=argparse.BooleanOptionalAction,
+                        help="Find unused variables.")
     parser.add_argument("-v", "--version", default=False, action=argparse.BooleanOptionalAction,
                         help="Output the version.")
     args = parser.parse_args()
@@ -58,30 +68,48 @@ def main():
     if directory.endswith("/"):
         directory = directory[:-1]
 
-    config = find_and_load_config(directory, args.config_file)
-    all_declared_vars = find_unused_vars(directory, config)
+    context = setup_run(directory, args.config_file)
+    if args.unused_vars:
+        find_unused_vars(context)
+    if args.duplicated_vars:
+        find_duplicated_vars(context)
 
-    LOGGER.debug("\n **unused vars** \n")
     if args.json_output:
-        output = json.dumps([{"name": k, "locations": list(v)}
-                             for k, v in all_declared_vars.items()], indent=4)
+        output = json.dumps(
+            [{"name": k, "type": "UNUSED", "locations": list(v)}
+             for k, v in context.all_unused_vars.items()]
+            +
+            [{"name": k, "type": "DUPLICATED", "locations": list(v.locations), "original": v.original}
+             for k, v in context.all_duplicated_vars.items()], indent=4)
         print(output, file=sys.stdout)
     else:
-        for var_name, var_locations in all_declared_vars.items():
+        LOGGER.info("\n**unused vars**\n")
+        for var_name, var_locations in context.all_unused_vars.items():
             print(f"""{var_name} at {[os.path.relpath(
                 x, directory) for x in var_locations]}\n""", file=sys.stdout)
+        LOGGER.info("\n**duplicated vars**\n")
+        for var_name, var_details in context.all_duplicated_vars.items():
+            print(f"""{var_name}""", file=sys.stdout)
+            print(f"""at {[os.path.relpath(
+                x, directory) for x in var_details.locations]}""", file=sys.stdout)
+            print(
+                f"""original {os.path.relpath(var_details.original, directory)}\n""", file=sys.stdout)
 
     if args.github_action:
         level = "warning" if args.exit_success else "error"
-        for var_name, var_locations in all_declared_vars.items():
+        for var_name, var_locations in context.all_unused_vars.items():
             for loc in var_locations:
                 msg = f"::{level} file={loc}::{var_name} is unused"
+                print(msg, file=sys.stderr)
+        for var_name, var_details in context.all_duplicated_vars.items():
+            for loc in var_details.locations:
+                msg = f"::{level} file={loc}::{var_name} is duplicated"
                 print(msg, file=sys.stderr)
 
     exit_code = 1
     if args.exit_success:
         exit_code = 0
-    if not all_declared_vars:
+    if not context.all_unused_vars and not context.all_duplicated_vars:
         exit_code = 0
         LOGGER.debug("no unused vars")
     LOGGER.debug("finished")
