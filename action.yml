@@ -25,7 +25,7 @@ inputs:
     default: replace-me-if-vault-is-used
 runs:
   using: docker
-  image: docker://ghcr.io/hoo29/little-timmy-action:v2
+  image: docker://ghcr.io/hoo29/little-timmy-action:v3
   args:
     - ${{ inputs.directory }}
     - ${{ inputs.additional_cli_args }}

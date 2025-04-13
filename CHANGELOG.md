@@ -16,7 +16,7 @@ multiple times at the same group level.
     │   │   ├── file0.yml dns: 1.1.1.1
     │   │   └── file1.yml dns: 2.2.2.2 # flagged, conflicting definition with file0.yml
     │   ├── g0.yml dns: 8.8.8.8
-    │   ├── g1.yml dns: 8.8.8.8 # flagged, duplicate of parent group g1
+    │   ├── g1.yml dns: 8.8.8.8 # flagged, duplicate of parent group g0
     │   ├── g2.yml dns: 1.1.1.1
     │   └── g3.yml dns: 1.1.1.1 # flagged, duplicate of parent group g2
     └── inventories
