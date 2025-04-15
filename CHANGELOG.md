@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.1.0] - 2025/04/15
+
+- Deduplicate duplicated variable outputs for multiple hosts in the same groups.
+
 ## [3.0.0] - 2025/04/13
 
 - Add support for finding duplicated variables that have the same value at different group levels and finding variables that have been defined

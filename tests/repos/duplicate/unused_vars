@@ -4,3 +4,4 @@ play_group_var_host
 another_var_ref
 in_the_inventory_file_host_var
 NOT_USED_GROUP_VAR
+hostb_host_var

@@ -6,7 +6,7 @@ from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
 from ansible.inventory.manager import InventoryManager
 from ansible.inventory.helpers import sort_groups
 
-from .config_loader import Context
+from .config_loader import Context, DuplicatedVarInfo
 from .utils import get_inventories, load_data_from_file, skip_var
 
 LOGGER = logging.getLogger("little-timmy")
@@ -117,3 +117,18 @@ def find_duplicated_vars(context: Context):
             # 1000 - playbook host_vars/*
             check_entity_for_duplicates(
                 context.root_dir, "host_vars", host.name, host.name, 1000, vars_for_host, context)
+
+    # reduce noise in output by not showing the same finding for multiple hosts
+    seen: set[str] = set()
+    unique_duplicated_vars: dict[str, DuplicatedVarInfo] = {}
+    for k, v in context.all_duplicated_vars.items():
+        hash_key = (
+            "".join(k.split("##")[1:])
+            + "##"
+            + v.original
+            + "##"
+            + "#".join(sorted(v.locations)))
+        if hash_key not in seen:
+            seen.add(hash_key)
+            unique_duplicated_vars[k] = v
+    context.all_duplicated_vars = unique_duplicated_vars
