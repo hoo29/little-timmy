@@ -49,11 +49,10 @@ def test_finds_duplicated_vars(repo):
 
     expected: dict[str, DuplicatedVarInfo] = defaultdict(DuplicatedVarInfo)
     for line in raw_expected:
-        parts = line.split("#")
-        key = f"localhost##{parts[0]}"
-        key = key.replace(":", "##")
+        parts = line.split("##")
+        key = "##".join(parts[:3])
         expected[key].locations = set(
-            json.loads(parts[1]))
+            json.loads(parts[3]))
 
     assert sorted(list(actual.keys())) == sorted(list(expected.keys()))
     for k, v in actual.items():

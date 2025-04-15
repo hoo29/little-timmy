@@ -15,10 +15,12 @@ LEVEL1:
         LEVEL3:
           hosts:
             localhost:
+            hostb:
         LEVEL4:
           hosts:
             localhost:
               in_the_inventory_file_host_var: 10
+            hostb:
         NOT_USED_GROUP:
           vars:
             NOT_USED_GROUP_VAR: 1
