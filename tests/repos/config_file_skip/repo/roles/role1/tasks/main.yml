@@ -26,5 +26,6 @@
     - 1
     - 2
     - 3
+  register: unused_register_var
   loop_control:
     index_var: used_index_var
