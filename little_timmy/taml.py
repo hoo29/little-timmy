@@ -86,6 +86,8 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
 
 
 def add_declared_var(var_name: str, source: str, context: Context):
+    if skip_var(var_name, context.config.magic_vars, context.config.skip_vars):
+        return
     relative_path = os.path.dirname(os.path.relpath(source, context.root_dir))
     external = any(
         excluded_dir in relative_path for excluded_dir in context.config.dirs_not_to_delcare_vars_from)
@@ -112,8 +114,6 @@ def walk_variable(var_value: any, source: str, context: Context):
 
 
 def parse_yaml_variable(var_name: str, var_value: any, source: str, context: Context):
-    if skip_var(var_name, context.config.magic_vars, context.config.skip_vars):
-        return
     add_declared_var(var_name, source, context)
     walk_variable(var_value, source, context)
 

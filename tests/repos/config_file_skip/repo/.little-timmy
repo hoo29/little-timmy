@@ -1,2 +1,3 @@
 skip_vars:
   - unused_host_var_b
+  - unused_register_var
