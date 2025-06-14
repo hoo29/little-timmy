@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.1.1] - 2025/06/14
+
+- Consider skip_vars for register, index_var and loop_control @parsa97
+
 ## [3.1.0] - 2025/04/15
 
 - Deduplicate duplicated variable outputs for multiple hosts in the same groups.
