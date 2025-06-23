@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.1.2] - 2025/06/23
+
+- Fix nested dict lookups with ":" chars in string
+
 ## [3.1.1] - 2025/06/14
 
 - Consider skip_vars for register, index_var and loop_control @parsa97
