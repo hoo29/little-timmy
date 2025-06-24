@@ -3,3 +3,6 @@ ref_by_another: msg
 used_var: a longer {{ ref_by_another }}
 conditional: true
 var_used_by_inventory: huw
+
+unsafe1: !unsafe "%{%d/%b/%Y:%H:%M:%S %z}t"
+unsafe2: "{{ unsafe1 }}"

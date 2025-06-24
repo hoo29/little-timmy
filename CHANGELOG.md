@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.1.3] - 2025/06/24
+
+- Don't look at the value of skipped variables.
+
 ## [3.1.2] - 2025/06/23
 
 - Fix nested dict lookups with ":" chars in string
