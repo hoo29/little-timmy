@@ -10,7 +10,7 @@ from .config_loader import setup_run
 from .duplicated_var_finder import find_duplicated_vars
 from .unused_var_finder import find_unused_vars
 
-VERSION = "3.1.3"
+VERSION = "3.2.0"
 LOGGER = logging.getLogger("little-timmy")
 
 # must be run only once

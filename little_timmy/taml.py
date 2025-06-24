@@ -1,5 +1,6 @@
 import os
 
+from ansible.utils.unsafe_proxy import AnsibleUnsafe
 from ansible.parsing.vault import AnsibleVaultError, AnsibleVaultFormatError, AnsibleVaultPasswordError
 from jinja2 import exceptions, meta, nodes, Template
 
@@ -65,6 +66,10 @@ def walk_template_ast(value: Template, context: Context):
 
 
 def parse_jinja(value: any, source: str, context: Context, jinja_context: bool = False):
+
+    if isinstance(value, AnsibleUnsafe):
+        return
+
     if jinja_context:
         value = str(value)
         if "{{" not in value:

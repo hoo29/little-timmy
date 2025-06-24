@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "little-timmy"
-version = "3.1.3"
+version = "3.2.0"
 description = "Little Timmy will try their best to find those unused and duplicated Ansible variables."
 readme = "README.md"
 authors = [{ name = "Huw" }]

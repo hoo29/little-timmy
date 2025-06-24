@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.2.0] - 2025/06/24
+
+- Don't parse !unsafe variables @einunderstzig
+
 ## [3.1.3] - 2025/06/24
 
 - Don't look at the value of skipped variables.
