@@ -11,7 +11,7 @@ LABEL com.github.actions.name="little-timmy-action" \
     org.opencontainers.image.vendor="@hoo29" \
     org.opencontainers.image.description="GHA for Little Timmy, an unused Ansible variable finder."
 
-RUN pip3 install little-timmy==3.1.2
+RUN pip3 install little-timmy==3.1.3
 
 COPY entrypoint.sh /entrypoint.sh
 

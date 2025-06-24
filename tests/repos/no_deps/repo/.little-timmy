@@ -1,2 +1,3 @@
 skip_vars:
   - login_info
+  - unsafe1

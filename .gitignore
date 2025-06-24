@@ -6,3 +6,4 @@ little_timmy.egg-info
 build
 junit
 .coverage
+.ansible
