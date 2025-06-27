@@ -71,7 +71,7 @@ CONFIG_FILE_DEFAULTS = {
     "extra_jinja_context_keys": [],
     "galaxy_dirs": ["ansible_collections", "galaxy_roles"],
     "skip_vars": [],
-    "skip_dirs": ["molecule", "venv", "tests"],
+    "skip_dirs": ["molecule", "venv", ".venv", "tests"],
     "skip_vars_duplicates_substrings": ["pass", "vault"],
     "playbook_globs": ["/**/*playbook.y*ml"],
     "template_globs": ["/**/templates/**/*"]
@@ -106,7 +106,7 @@ CONFIG_FILE_SCHEMA = {
         },
         "skip_dirs": {
             "description": "Directories to skip loading files from.",
-            "default": ["molecule", "venv", "tests"],
+            "default": ["molecule", "venv", ".venv", "tests"],
             "type": "array",
             "items": {
                 "type": "string"
