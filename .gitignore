@@ -7,3 +7,4 @@ build
 junit
 .coverage
 .ansible
+uv.lock

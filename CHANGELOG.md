@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.3.0] - 2025/06/27
+
+- Make template and playbook globs configurable
+
 ## [3.2.0] - 2025/06/24
 
 - Don't parse !unsafe variables @einunderstzig

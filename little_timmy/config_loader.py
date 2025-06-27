@@ -72,7 +72,9 @@ CONFIG_FILE_DEFAULTS = {
     "galaxy_dirs": ["ansible_collections", "galaxy_roles"],
     "skip_vars": [],
     "skip_dirs": ["molecule", "venv", "tests"],
-    "skip_vars_duplicates_substrings": ["pass", "vault"]
+    "skip_vars_duplicates_substrings": ["pass", "vault"],
+    "playbook_globs": ["/**/*playbook.y*ml"],
+    "template_globs": ["/**/templates/**/*"]
 }
 
 CONFIG_FILE_SCHEMA = {
@@ -110,6 +112,22 @@ CONFIG_FILE_SCHEMA = {
                 "type": "string"
             }
         },
+        "playbook_globs": {
+            "description": "Globs where to find playbooks.",
+            "default": ["/**/*playbook.y*ml"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "template_globs": {
+            "description": "Globs where to find temlates.",
+            "default": ["/**/templates/**/*"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "extra_jinja_context_keys": {
             "description": """
             Locations where there is already a jinja context for evaluation e.g. `when` and `assert.that`.
@@ -132,6 +150,8 @@ class Config():
     skip_vars: list[str]
     skip_vars_duplicates_substrings: list[str]
     skip_dirs: list[str]
+    playbook_globs: list[str]
+    template_globs: list[str]
     jinja_context_keys: tuple[str]
     magic_vars: list[str]
     dirs_not_to_delcare_vars_from: list[str]
