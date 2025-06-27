@@ -71,8 +71,10 @@ CONFIG_FILE_DEFAULTS = {
     "extra_jinja_context_keys": [],
     "galaxy_dirs": ["ansible_collections", "galaxy_roles"],
     "skip_vars": [],
-    "skip_dirs": ["molecule", "venv", "tests"],
-    "skip_vars_duplicates_substrings": ["pass", "vault"]
+    "skip_dirs": ["molecule", "venv", ".venv", "tests"],
+    "skip_vars_duplicates_substrings": ["pass", "vault"],
+    "playbook_globs": ["/**/*playbook.y*ml"],
+    "template_globs": ["/**/templates/**/*"]
 }
 
 CONFIG_FILE_SCHEMA = {
@@ -104,7 +106,23 @@ CONFIG_FILE_SCHEMA = {
         },
         "skip_dirs": {
             "description": "Directories to skip loading files from.",
-            "default": ["molecule", "venv", "tests"],
+            "default": ["molecule", "venv", ".venv", "tests"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "playbook_globs": {
+            "description": "Globs where to find playbooks.",
+            "default": ["/**/*playbook.y*ml"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "template_globs": {
+            "description": "Globs where to find temlates.",
+            "default": ["/**/templates/**/*"],
             "type": "array",
             "items": {
                 "type": "string"
@@ -132,6 +150,8 @@ class Config():
     skip_vars: list[str]
     skip_vars_duplicates_substrings: list[str]
     skip_dirs: list[str]
+    playbook_globs: list[str]
+    template_globs: list[str]
     jinja_context_keys: tuple[str]
     magic_vars: list[str]
     dirs_not_to_delcare_vars_from: list[str]

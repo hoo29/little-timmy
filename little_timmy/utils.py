@@ -18,7 +18,7 @@ def get_items_in_folder(root_dir: str, search_glob: str, galaxy_dirs: list[str],
         return any(excluded_dir in relative_path for excluded_dir in dirs_to_exclude)
 
     return (
-        os.path.abspath(f) for f in iglob(search_glob, recursive=True)
+        os.path.abspath(f) for f in iglob(search_glob, recursive=True, include_hidden=True)
         if ((files and os.path.isfile(f)) or (not files and os.path.isdir(f)))
         and not should_exclude(f)
     )
