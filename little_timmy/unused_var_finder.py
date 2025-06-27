@@ -76,12 +76,13 @@ def find_unused_vars(context: Context) -> dict[str, set[str]]:
                         var_name, var_value, path, context)
 
     # playbooks
-    for path in get_items_in_folder(context.root_dir, f"{context.root_dir}/**/*playbook{YAML_FILE_EXTENSION_GLOB}",
-                                    context.config.galaxy_dirs, dirs_to_exclude=context.config.skip_dirs):
-        LOGGER.debug(f"playbook {path}")
-        contents = load_data_from_file(path, context.loader)
-        parse_yaml_list(contents, path, context)
-
+    for playbook_glob in context.config.playbook_globs:
+        for path in get_items_in_folder(context.root_dir, f"{context.root_dir}{playbook_glob}",
+                                        context.config.galaxy_dirs, dirs_to_exclude=context.config.skip_dirs):
+            LOGGER.debug(f"playbook {path}")
+            contents = load_data_from_file(path, context.loader)
+            parse_yaml_list(contents, path, context)
+    
     # tasks files
     for path in get_items_in_folder(context.root_dir, f"{context.root_dir}/**/tasks/**/{YAML_FILE_EXTENSION_GLOB}",
                                     context.config.galaxy_dirs, True, dirs_to_exclude=context.config.skip_dirs):
@@ -97,11 +98,12 @@ def find_unused_vars(context: Context) -> dict[str, set[str]]:
         parse_yaml_list(contents, path, context)
 
     # templates
-    for path in get_items_in_folder(context.root_dir, f"{context.root_dir}/**/templates/**/*",
-                                    context.config.galaxy_dirs, True, dirs_to_exclude=context.config.skip_dirs):
-        LOGGER.debug(f"template file {path}")
-        with open(path, "r") as f:
-            parse_jinja(f.read(), path, context)
+    for temlate_glob in context.config.template_globs:
+        for path in get_items_in_folder(context.root_dir, f"{context.root_dir}{temlate_glob}",
+                                        context.config.galaxy_dirs, True, dirs_to_exclude=context.config.skip_dirs):
+            LOGGER.debug(f"template file {path}")
+            with open(path, "r") as f:
+                parse_jinja(f.read(), path, context)
 
     # check local molecule folder for variable consumption only
     for path in get_items_in_folder(context.root_dir, f"{context.root_dir}/molecule/**/{YAML_FILE_EXTENSION_GLOB}",

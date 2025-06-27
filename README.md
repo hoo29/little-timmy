@@ -132,6 +132,22 @@ The schema for the file is:
                 "type": "string"
             }
         },
+        "playbook_globs": {
+            "description": "Globs where to find playbooks.",
+            "default": ["/**/*playbook.y*ml"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "template_globs": {
+            "description": "Globs where to find temlates.",
+            "default": ["/**/templates/**/*"],
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "extra_jinja_context_keys": {
             "description": """
             Locations where there is already a jinja context for evaluation e.g. `when` and `assert.that`.
