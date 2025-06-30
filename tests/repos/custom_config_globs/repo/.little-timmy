@@ -1,0 +1,5 @@
+playbook_globs:
+  - /**/playbooks/**/*.y*ml
+
+template_globs:
+  - /**/*.j2

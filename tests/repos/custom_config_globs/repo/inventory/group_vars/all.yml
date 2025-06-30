@@ -1,0 +1,5 @@
+used_config_var: test
+unused_config_var: test
+
+used_playbook_var: test
+unused_playbook_var: test
