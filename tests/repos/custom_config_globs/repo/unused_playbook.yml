@@ -1,0 +1,12 @@
+- name: Used playbook
+  hosts: all
+  become: false
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Debug1
+      delegate_to: localhost
+      ansible.builtin.debug:
+        var: unused_playbook_var
+
+
