@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.3.1] - 2025/09/01
+
+- Fix for not finding unused var when using string of var name as index
+
 ## [3.3.0] - 2025/06/27
 
 - Make template and playbook globs configurable
