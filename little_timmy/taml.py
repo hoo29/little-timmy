@@ -48,8 +48,13 @@ def walk_template_ast(value: Template, context: Context):
                 and isinstance(cur_node.arg, nodes.Const)
                     and cur_node.ctx == "load" and isinstance(cur_node.arg.value, str)):
                 value = cur_node.arg.value
-                if "{{" not in value and ":" not in value:
-                    value = "{{ " + value + " }}"
+                # cover set facts saved in hostvars
+                if('node' in cur_node.fields
+                    and 'node' in cur_node.node.fields
+                    and 'name' in cur_node.node.node.fields
+                    and cur_node.node.node.name == 'hostvars'):
+                    if "{{" not in value and ":" not in value:
+                        value = "{{ " + value + " }}"
                 more_vars = more_vars.union(meta.find_undeclared_variables(
                     context.jinja_env.parse(value)))
 
