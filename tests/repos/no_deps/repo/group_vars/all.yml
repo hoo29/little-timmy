@@ -6,3 +6,15 @@ var_used_by_inventory: huw
 
 unsafe1: !unsafe "%{%d/%b/%Y:%H:%M:%S %z}t"
 unsafe2: "{{ unsafe1 }}"
+
+unused1: test
+unused2: test
+unused3: test
+unused4: test
+unused5: test
+used_dict:
+    unused1: 1 # <- this one is actually used by unused4 template
+    unused2-unused3: 2 # <- this one is actually used by unused5 template
+    unused4:unused5: 3
+    
+unused6: "{{ used_dict['unused1'] }} {{ used_dict['unused2-unused3'] }} {{ used_dict['unused4:unused5'] }}"
