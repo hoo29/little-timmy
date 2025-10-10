@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.3.2] - 2025/10/10
+
+- Fix for not finding loop_var
+
 ## [3.3.1] - 2025/09/01
 
 - Fix for not finding unused var when using string of var name as index

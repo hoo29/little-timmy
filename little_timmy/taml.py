@@ -141,6 +141,8 @@ def parse_yaml_dict(contents: dict, source: str, context: Context, history: str 
             add_declared_var(v, source, context)
         elif k == "index_var" and history.endswith("loop_control"):
             add_declared_var(v, source, context)
+        elif k == "loop_var" and history.endswith("loop_control"):
+            add_declared_var(v, source, context)
         elif (k == "vars" or k.endswith("set_fact")) and isinstance(v, dict):
             for var_name, var_value in v.items():
                 parse_yaml_variable(var_name, var_value, source, context)
