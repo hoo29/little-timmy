@@ -2,9 +2,12 @@
 
 Change log for the little-timmy python module.
 
-## [3.3.2] - 2025/10/11
+## [3.3.3] - 2025/10/13
 
 - Fix for not finding loop_var @einunderstzig
+
+## [3.3.2] - 2025/10/11
+
 - Update dependencies to ansible >= 3.0.0, < 12.0.0 because of a major refactor of jinja in
 <https://github.com/ansible/ansible/pull/84621>
 
