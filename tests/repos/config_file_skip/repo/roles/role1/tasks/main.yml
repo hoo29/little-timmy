@@ -17,10 +17,11 @@
     - 3
   loop_control:
     index_var: unused_index_var
+    loop_var: unused_loop_var
 
 - name: Cmd4
   ansible.builtin.command:
-    cmd: echo {{ used_var }} {{ item }} {{ used_index_var }}
+    cmd: echo {{ used_var }} {{ item }} {{ used_index_var }} {{ used_loop_var }}
   changed_when: false
   loop:
     - 1
@@ -29,3 +30,4 @@
   register: unused_register_var
   loop_control:
     index_var: used_index_var
+    loop_var: used_loop_var
