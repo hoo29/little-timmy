@@ -203,7 +203,7 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
     
     # In ansible >= 12, VaultSecretsContext can only be initialized once
     # Check if it's already initialized before calling setup_vault_secrets
-    if ANSIBLE_12_PLUS and VaultSecretsContext is not None and VaultSecretsContext.current(optional=True):
+    if VaultSecretsContext is not None and VaultSecretsContext.current(optional=True):
         # Already initialized, just get the secrets from the current context
         vault_secrets = VaultSecretsContext.current().secrets
     else:
