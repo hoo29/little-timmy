@@ -9,7 +9,12 @@ from jsonschema import validate
 from ansible import cli, constants as C
 from ansible.parsing.dataloader import DataLoader
 from ansible.plugins.filter import AnsibleJinja2Filter
-from ansible.template import JinjaPluginIntercept
+try:
+    # ansible >= 12 (ansible-core >= 2.19)
+    from ansible._internal._templating._jinja_plugins import JinjaPluginIntercept
+except ImportError:
+    # ansible < 12 (ansible-core < 2.19)
+    from ansible.template import JinjaPluginIntercept
 from ansible.plugins.loader import test_loader, Jinja2Loader
 
 from .utils import get_items_in_folder
