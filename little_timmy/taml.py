@@ -85,9 +85,12 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
         parsed = context.jinja_env.parse(value)
     except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
         raise ValueError(f"Ansible vault error for file {source}") from err
-    except exceptions.TemplateError as err:
-        err_msg = f"Jinja template error for file {source} value {value}"
-        raise ValueError(err_msg) from err
+    except exceptions.TemplateError:
+        # In ansible >= 12, !unsafe values are no longer wrapped in AnsibleUnsafe,
+        # so we can't detect them before parsing. If parsing fails, skip the value
+        # (treat it as having no variable references, similar to AnsibleUnsafe).
+        # This handles !unsafe values and other unparseable content gracefully.
+        return
     referenced_vars = meta.find_undeclared_variables(parsed)
     referenced_vars = referenced_vars.union(
         walk_template_ast(parsed, context))
