@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        ansible-version: [">=11.0.0,<12.0.0", ">=12.0.0,<13.0.0"]
 
     steps:
       - uses: actions/checkout@v4
@@ -26,10 +25,7 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: |
-          pip install "ansible${{ matrix.ansible-version }}"
-          pip install "jsonschema>=4.18.5" pytest
-          pip install --no-deps -e .
+        run: pip install . .[tests]
 
       - name: Run tests
         run: pytest -vv
