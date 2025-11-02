@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.4.0] - 2025/11/02
+
+- Add compatibility with ansible >= 12 by adapting to jinja templating internals refactor @copilot
+
 ## [3.3.3] - 2025/10/13
 
 - Fix for not finding loop_var @einunderstzig

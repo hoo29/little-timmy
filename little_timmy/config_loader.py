@@ -9,7 +9,18 @@ from jsonschema import validate
 from ansible import cli, constants as C
 from ansible.parsing.dataloader import DataLoader
 from ansible.plugins.filter import AnsibleJinja2Filter
-from ansible.template import JinjaPluginIntercept
+try:
+    # ansible >= 12 (ansible-core >= 2.19)
+    from ansible._internal._templating._jinja_plugins import JinjaPluginIntercept
+    from ansible.parsing.vault import VaultSecretsContext
+    from jinja2 import defaults as jinja2_defaults
+    ANSIBLE_12_PLUS = True
+except ImportError:
+    # ansible < 12 (ansible-core < 2.19)
+    from ansible.template import JinjaPluginIntercept
+    VaultSecretsContext = None
+    jinja2_defaults = None
+    ANSIBLE_12_PLUS = False
 from ansible.plugins.loader import test_loader, Jinja2Loader
 
 from .utils import get_items_in_folder
@@ -189,21 +200,48 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
     # Setup dataloader and vault
     loader = DataLoader()
     vault_ids = C.DEFAULT_VAULT_IDENTITY_LIST
-    vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
+    
+    # In ansible >= 12, VaultSecretsContext can only be initialized once
+    # Check if it's already initialized before calling setup_vault_secrets
+    if VaultSecretsContext is not None and VaultSecretsContext.current(optional=True):
+        # Already initialized, just get the secrets from the current context
+        vault_secrets = VaultSecretsContext.current().secrets
+    else:
+        # Not initialized yet (or ansible < 12), initialize it
+        vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
+    
     loader.set_vault_secrets(vault_secrets)
     # Setup jinja env
     plugin_folders = get_items_in_folder(
         root_dir, f"{root_dir}/**/filter_plugins", config.galaxy_dirs, True, config.skip_dirs, False)
     jinja_env = Environment()
-    jinja_env.filters = JinjaPluginIntercept(jinja_env.filters, Jinja2Loader(
+    
+    # Create filter plugin loader
+    filter_loader = Jinja2Loader(
         'FilterModule',
         'ansible.plugins.filter',
         C.DEFAULT_FILTER_PLUGIN_PATH +
         [os.path.abspath(x) for x in plugin_folders],
         'filter_plugins',
         AnsibleJinja2Filter
-    ))
-    jinja_env.tests = JinjaPluginIntercept(jinja_env.tests, test_loader)
+    )
+    
+    # In ansible >= 12, JinjaPluginIntercept signature changed
+    # Old: JinjaPluginIntercept(delegatee, pluginloader)
+    # New: JinjaPluginIntercept(jinja_builtins, plugin_loader)
+    # where jinja_builtins must be wrapped using loader._wrap_funcs
+    # Note: _wrap_funcs is an internal method, but it's the standard way ansible
+    # itself uses to create JinjaPluginIntercept instances (see ansible/_internal/_templating/_jinja_bits.py)
+    if ANSIBLE_12_PLUS:
+        # Use jinja2 defaults for builtins, wrapped by the loader
+        builtin_filters = filter_loader._wrap_funcs(jinja2_defaults.DEFAULT_FILTERS, {})
+        builtin_tests = test_loader._wrap_funcs(jinja2_defaults.DEFAULT_TESTS, {})
+        jinja_env.filters = JinjaPluginIntercept(builtin_filters, filter_loader)
+        jinja_env.tests = JinjaPluginIntercept(builtin_tests, test_loader)
+    else:
+        # Use jinja_env's own filters/tests as delegatee
+        jinja_env.filters = JinjaPluginIntercept(jinja_env.filters, filter_loader)
+        jinja_env.tests = JinjaPluginIntercept(jinja_env.tests, test_loader)
 
     # Setup context
     all_declared_vars: dict[str, set[str]] = defaultdict(set)

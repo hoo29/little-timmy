@@ -4,14 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "little-timmy"
-version = "3.3.3"
+version = "3.4.0"
 description = "Little Timmy will try their best to find those unused and duplicated Ansible variables."
 readme = "README.md"
 authors = [{ name = "Huw" }]
 license = { file = "LICENSE" }
 
-# < 12.0.0 because of a major refactor of jinja in https://github.com/ansible/ansible/pull/84621
-dependencies = ["ansible >= 3.0.0, < 12.0.0", "jsonschema >= 4.18.5"]
+dependencies = ["ansible >= 3.0.0", "jsonschema >= 4.18.5"]
 requires-python = ">=3.9"
 
 [project.urls]
