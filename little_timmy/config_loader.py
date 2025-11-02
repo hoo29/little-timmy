@@ -203,7 +203,7 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
     
     # In ansible >= 12, VaultSecretsContext can only be initialized once
     # Check if it's already initialized before calling setup_vault_secrets
-    if ANSIBLE_12_PLUS and VaultSecretsContext.current(optional=True):
+    if ANSIBLE_12_PLUS and VaultSecretsContext is not None and VaultSecretsContext.current(optional=True):
         # Already initialized, just get the secrets from the current context
         vault_secrets = VaultSecretsContext.current().secrets
     else:
@@ -230,6 +230,8 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
     # Old: JinjaPluginIntercept(delegatee, pluginloader)
     # New: JinjaPluginIntercept(jinja_builtins, plugin_loader)
     # where jinja_builtins must be wrapped using loader._wrap_funcs
+    # Note: _wrap_funcs is an internal method, but it's the standard way ansible
+    # itself uses to create JinjaPluginIntercept instances (see ansible/_internal/_templating/_jinja_bits.py)
     if ANSIBLE_12_PLUS:
         # Use jinja2 defaults for builtins, wrapped by the loader
         builtin_filters = filter_loader._wrap_funcs(jinja2_defaults.DEFAULT_FILTERS, {})

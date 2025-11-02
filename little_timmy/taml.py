@@ -1,3 +1,4 @@
+import logging
 import os
 
 from ansible.utils.unsafe_proxy import AnsibleUnsafe
@@ -6,6 +7,8 @@ from jinja2 import exceptions, meta, nodes, Template
 
 from .config_loader import Context
 from .utils import skip_var
+
+LOGGER = logging.getLogger("little-timmy")
 
 
 def walk_template_ast_arg(cur_node: any, context: Context):
@@ -85,11 +88,12 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
         parsed = context.jinja_env.parse(value)
     except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
         raise ValueError(f"Ansible vault error for file {source}") from err
-    except exceptions.TemplateError:
+    except exceptions.TemplateError as err:
         # In ansible >= 12, !unsafe values are no longer wrapped in AnsibleUnsafe,
         # so we can't detect them before parsing. If parsing fails, skip the value
         # (treat it as having no variable references, similar to AnsibleUnsafe).
         # This handles !unsafe values and other unparseable content gracefully.
+        LOGGER.debug(f"Skipping unparseable value in {source}: {value[:50]}... (error: {err})")
         return
     referenced_vars = meta.find_undeclared_variables(parsed)
     referenced_vars = referenced_vars.union(
