@@ -4,11 +4,7 @@ Change log for the little-timmy python module.
 
 ## [3.4.0] - 2025/11/02
 
-- Add compatibility with ansible >= 12 by adapting to jinja templating internals refactor
-- Import `JinjaPluginIntercept` from new location with fallback to old location
-- Handle `VaultSecretsContext` singleton initialization in ansible >= 12
-- Handle !unsafe values in ansible >= 12 where they're no longer wrapped in `AnsibleUnsafe`
-- Remove ansible version upper bound constraint
+- Add compatibility with ansible >= 12 by adapting to jinja templating internals refactor @copilot
 
 ## [3.3.3] - 2025/10/13
 
