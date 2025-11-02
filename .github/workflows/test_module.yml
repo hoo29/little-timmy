@@ -28,7 +28,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install "ansible${{ matrix.ansible-version }}"
-          pip install . .[tests]
+          pip install "jsonschema>=4.18.5" pytest
+          pip install --no-deps -e .
 
       - name: Run tests
         run: pytest -vv
