@@ -1,8 +1,11 @@
 import logging
 import os
+import sys
+import types
 import yaml
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 
 from jinja2 import Environment
 from jsonschema import validate
@@ -28,103 +31,103 @@ from .utils import get_items_in_folder
 LOGGER = logging.getLogger("little-timmy")
 
 
-def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> list[str]:
+def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> None:
     """
     Find all galaxy collections in the root directory and set them up for FQDN access.
     Creates in-memory Python modules without modifying the filesystem.
-    Returns empty list (kept for compatibility).
     """
-    import sys
-    import types
-    from glob import iglob
-    
     # Look for galaxy.yml files which indicate a collection
-    for galaxy_file in iglob(f"{root_dir}/**/galaxy.yml", recursive=True):
-        # Skip if in excluded directories
-        relative_path = os.path.relpath(os.path.dirname(galaxy_file), root_dir)
-        if any(excluded_dir in relative_path for excluded_dir in skip_dirs):
-            continue
-            
-        collection_dir = os.path.dirname(galaxy_file)
+    galaxy_files = get_items_in_folder(
+        root_dir, f"{root_dir}/**/galaxy.yml", skip_dirs, include_ext=True, dirs_to_exclude=skip_dirs
+    )
+    
+    for galaxy_file in galaxy_files:
+        collection_dir = Path(galaxy_file).parent
         
         # Read galaxy.yml to get namespace and name
         try:
-            with open(galaxy_file, 'r') as f:
+            with open(galaxy_file, "r") as f:
                 galaxy_info = yaml.safe_load(f)
-                
-            namespace = galaxy_info.get('namespace')
-            name = galaxy_info.get('name')
             
-            if namespace and name:
-                # Check if collection is already in the correct structure
-                expected_path = f"ansible_collections/{namespace}/{name}"
-                if collection_dir.endswith(expected_path):
-                    # Already in correct structure, add the parent directory to sys.path
-                    parent_dir = collection_dir[:-len(expected_path)].rstrip('/')
-                    if parent_dir and parent_dir not in sys.path:
-                        sys.path.insert(0, parent_dir)
-                        LOGGER.debug(f"Found collection {namespace}.{name} at {parent_dir}")
-                else:
-                    # Create in-memory Python modules for the collection
-                    # This avoids modifying the filesystem while still allowing FQDN resolution
-                    
-                    # Create collection metadata
-                    collection_meta = {
-                        'name': f'{namespace}.{name}',
-                        'version': galaxy_info.get('version', '1.0.0'),
-                        'authors': galaxy_info.get('authors', []),
-                        'description': galaxy_info.get('description', ''),
-                        'plugin_routing': {},
-                    }
-                    
-                    # Ensure base ansible_collections module exists
-                    if 'ansible_collections' not in sys.modules:
-                        ansible_collections = types.ModuleType('ansible_collections')
-                        ansible_collections.__path__ = []
-                        sys.modules['ansible_collections'] = ansible_collections
-                    
-                    # Ensure namespace module exists
-                    namespace_module_name = f'ansible_collections.{namespace}'
-                    if namespace_module_name not in sys.modules:
-                        namespace_module = types.ModuleType(namespace_module_name)
-                        namespace_module.__path__ = []
-                        sys.modules[namespace_module_name] = namespace_module
-                        setattr(sys.modules['ansible_collections'], namespace, namespace_module)
-                    
-                    # Create collection module
-                    collection_module_name = f'ansible_collections.{namespace}.{name}'
-                    collection_module = types.ModuleType(collection_module_name)
-                    collection_module._collection_meta = collection_meta
-                    collection_module.__path__ = [os.path.abspath(collection_dir)]
-                    collection_module.__file__ = os.path.join(os.path.abspath(collection_dir), "__init__.py")
-                    sys.modules[collection_module_name] = collection_module
-                    setattr(sys.modules[namespace_module_name], name, collection_module)
-                    
-                    # Create plugins submodule if plugins directory exists
-                    plugins_dir = os.path.join(collection_dir, "plugins")
-                    if os.path.exists(plugins_dir):
-                        plugins_module_name = f'{collection_module_name}.plugins'
-                        plugins_module = types.ModuleType(plugins_module_name)
-                        plugins_module.__path__ = [os.path.abspath(plugins_dir)]
-                        plugins_module.__file__ = os.path.join(os.path.abspath(plugins_dir), "__init__.py")
-                        sys.modules[plugins_module_name] = plugins_module
-                        setattr(collection_module, 'plugins', plugins_module)
-                        
-                        # Create plugins.filter submodule if filter directory exists
-                        filter_dir = os.path.join(plugins_dir, "filter")
-                        if os.path.exists(filter_dir):
-                            filter_module_name = f'{plugins_module_name}.filter'
-                            filter_module = types.ModuleType(filter_module_name)
-                            filter_module.__path__ = [os.path.abspath(filter_dir)]
-                            filter_module.__file__ = os.path.join(os.path.abspath(filter_dir), "__init__.py")
-                            sys.modules[filter_module_name] = filter_module
-                            setattr(plugins_module, 'filter', filter_module)
-                    
-                    LOGGER.debug(f"Registered in-memory collection {namespace}.{name}")
+            namespace = galaxy_info.get("namespace")
+            name = galaxy_info.get("name")
+            
+            if not namespace or not name:
+                continue
+                
+            # Check if collection is already in the correct structure
+            expected_path = Path("ansible_collections") / namespace / name
+            if collection_dir.match(f"*/{expected_path}"):
+                # Already in correct structure - Ansible will load it automatically
+                # Just ensure the parent is in sys.path
+                parent_dir = str(collection_dir.parents[2])  # Go up from name->namespace->ansible_collections
+                if parent_dir not in sys.path:
+                    sys.path.insert(0, parent_dir)
+                    LOGGER.debug(f"Found collection {namespace}.{name} at {parent_dir}")
+                continue
+            
+            # Create in-memory Python modules for the collection
+            # This avoids modifying the filesystem while still allowing FQDN resolution
+            
+            # Create collection metadata
+            collection_meta = {
+                "name": f"{namespace}.{name}",
+                "version": galaxy_info.get("version", "1.0.0"),
+                "authors": galaxy_info.get("authors", []),
+                "description": galaxy_info.get("description", ""),
+                "plugin_routing": {},
+            }
+            
+            # Ensure base ansible_collections module exists
+            if "ansible_collections" not in sys.modules:
+                ansible_collections = types.ModuleType("ansible_collections")
+                ansible_collections.__path__ = []
+                sys.modules["ansible_collections"] = ansible_collections
+            
+            # Ensure namespace module exists
+            namespace_module_name = f"ansible_collections.{namespace}"
+            if namespace_module_name not in sys.modules:
+                namespace_module = types.ModuleType(namespace_module_name)
+                namespace_module.__path__ = []
+                sys.modules[namespace_module_name] = namespace_module
+                setattr(sys.modules["ansible_collections"], namespace, namespace_module)
+            
+            # Create collection module (skip if already exists)
+            collection_module_name = f"ansible_collections.{namespace}.{name}"
+            if collection_module_name in sys.modules:
+                LOGGER.debug(f"Collection {namespace}.{name} already registered")
+                continue
+                
+            collection_module = types.ModuleType(collection_module_name)
+            collection_module._collection_meta = collection_meta
+            collection_module.__path__ = [str(collection_dir.resolve())]
+            collection_module.__file__ = str(collection_dir / "__init__.py")
+            sys.modules[collection_module_name] = collection_module
+            setattr(sys.modules[namespace_module_name], name, collection_module)
+            
+            # Create plugins submodule if plugins directory exists
+            plugins_dir = collection_dir / "plugins"
+            if plugins_dir.is_dir():
+                plugins_module_name = f"{collection_module_name}.plugins"
+                plugins_module = types.ModuleType(plugins_module_name)
+                plugins_module.__path__ = [str(plugins_dir.resolve())]
+                plugins_module.__file__ = str(plugins_dir / "__init__.py")
+                sys.modules[plugins_module_name] = plugins_module
+                setattr(collection_module, "plugins", plugins_module)
+                
+                # Create plugins.filter submodule if filter directory exists
+                filter_dir = plugins_dir / "filter"
+                if filter_dir.is_dir():
+                    filter_module_name = f"{plugins_module_name}.filter"
+                    filter_module = types.ModuleType(filter_module_name)
+                    filter_module.__path__ = [str(filter_dir.resolve())]
+                    filter_module.__file__ = str(filter_dir / "__init__.py")
+                    sys.modules[filter_module_name] = filter_module
+                    setattr(plugins_module, "filter", filter_module)
+            
+            LOGGER.debug(f"Registered in-memory collection {namespace}.{name}")
         except Exception as e:
             LOGGER.debug(f"Error processing galaxy.yml at {galaxy_file}: {e}")
-            
-    return []  # No filesystem paths created
 
 DEFAULT_CONFIG_FILE_NAME = ".little-timmy"
 DEFAULT_JINJA_CONTEXT_KEYS = [
