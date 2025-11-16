@@ -2,6 +2,10 @@
 
 Change log for the little-timmy python module.
 
+## [3.5.0] - 2025/11/16
+
+- Support custom filters in collections @copilot/@hoo29
+
 ## [3.4.0] - 2025/11/02
 
 - Add compatibility with ansible >= 12 by adapting to jinja templating internals refactor @copilot
