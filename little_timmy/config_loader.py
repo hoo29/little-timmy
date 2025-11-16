@@ -82,11 +82,19 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                 "plugin_routing": {},
             }
             
-            # Ensure base ansible_collections module exists
+            # Ensure base ansible_collections module exists or get the existing one
             if "ansible_collections" not in sys.modules:
-                ansible_collections = types.ModuleType("ansible_collections")
-                ansible_collections.__path__ = []
-                sys.modules["ansible_collections"] = ansible_collections
+                # Import it if possible (this will use the collection finder)
+                try:
+                    import ansible_collections
+                except ImportError:
+                    # If it doesn't exist, create it
+                    ansible_collections = types.ModuleType("ansible_collections")
+                    ansible_collections.__path__ = []
+                    sys.modules["ansible_collections"] = ansible_collections
+            else:
+                # Module already exists, just get a reference to it
+                ansible_collections = sys.modules["ansible_collections"]
             
             # Ensure namespace module exists
             namespace_module_name = f"ansible_collections.{namespace}"
@@ -94,7 +102,9 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                 namespace_module = types.ModuleType(namespace_module_name)
                 namespace_module.__path__ = []
                 sys.modules[namespace_module_name] = namespace_module
-                setattr(sys.modules["ansible_collections"], namespace, namespace_module)
+                setattr(ansible_collections, namespace, namespace_module)
+            else:
+                namespace_module = sys.modules[namespace_module_name]
             
             # Create collection module (skip if already exists)
             collection_module_name = f"ansible_collections.{namespace}.{name}"
@@ -107,7 +117,7 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
             collection_module.__path__ = [str(collection_dir.resolve())]
             collection_module.__file__ = str(collection_dir / "__init__.py")
             sys.modules[collection_module_name] = collection_module
-            setattr(sys.modules[namespace_module_name], name, collection_module)
+            setattr(namespace_module, name, collection_module)
             
             # Create plugins submodule if plugins directory exists
             plugins_dir = collection_dir / "plugins"

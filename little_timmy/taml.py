@@ -95,21 +95,9 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
         # This handles !unsafe values and other unparseable content gracefully.
         LOGGER.debug(f"Skipping unparseable value in {source}: {value[:50]}... (error: {err})")
         return
-    
-    try:
-        referenced_vars = meta.find_undeclared_variables(parsed)
-        referenced_vars = referenced_vars.union(
-            walk_template_ast(parsed, context))
-    except exceptions.TemplateAssertionError as err:
-        # Jinja2's meta.find_undeclared_variables uses a code generator that validates
-        # filter/test names exist in the environment. FQDN filters/tests from external
-        # collections (e.g., ansible.utils.ipv4_address) may not be discoverable during
-        # static analysis even if they exist at runtime. Skip these templates gracefully.
-        # This allows analysis to continue for templates using external collection plugins
-        # that aren't loaded in the analysis environment.
-        LOGGER.debug(f"Skipping template with unresolvable plugin in {source}: {value[:50]}... (error: {err})")
-        return
-    
+    referenced_vars = meta.find_undeclared_variables(parsed)
+    referenced_vars = referenced_vars.union(
+        walk_template_ast(parsed, context))
     for referenced_var in referenced_vars:
         context.all_referenced_vars[referenced_var].add(source)
 
