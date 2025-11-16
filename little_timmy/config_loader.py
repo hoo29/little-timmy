@@ -85,8 +85,12 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> li
                     with open(os.path.join(namespace_dir, "__init__.py"), 'w') as f:
                         f.write("")
                     
-                    # Create symlink to the actual collection
-                    os.symlink(os.path.abspath(collection_dir), target_dir)
+                    # Copy the collection to the temporary directory
+                    # Note: We can't use os.symlink because writing __init__.py files
+                    # to a symlinked directory would modify the source. Instead, we'll
+                    # use shutil.copytree to create a copy.
+                    import shutil
+                    shutil.copytree(os.path.abspath(collection_dir), target_dir, symlinks=True)
                     
                     # Create __init__.py files in plugins directories
                     # These are needed for Python to treat them as packages
