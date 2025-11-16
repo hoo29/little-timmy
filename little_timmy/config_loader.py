@@ -90,8 +90,9 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                 namespace_module.__path__ = []
                 sys.modules[namespace_module_name] = namespace_module
                 setattr(ansible_collections, namespace, namespace_module)
-            else:
-                namespace_module = sys.modules[namespace_module_name]
+            
+            # Get reference to namespace module from sys.modules
+            namespace_module = sys.modules[namespace_module_name]
             
             # Create collection module (skip if already exists)
             collection_module_name = f"ansible_collections.{namespace}.{name}"
