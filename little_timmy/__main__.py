@@ -4,17 +4,12 @@ import json
 import os
 import sys
 
-from ansible.plugins.loader import init_plugin_loader
-
 from .config_loader import setup_run
 from .duplicated_var_finder import find_duplicated_vars
 from .unused_var_finder import find_unused_vars
 
-VERSION = "3.4.0"
+VERSION = "3.5.0"
 LOGGER = logging.getLogger("little-timmy")
-
-# must be run only once
-init_plugin_loader()
 
 
 def main():
