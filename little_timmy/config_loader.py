@@ -24,8 +24,8 @@ except ImportError:
     VaultSecretsContext = None
     jinja2_defaults = None
     ANSIBLE_12_PLUS = False
-from ansible.plugins.loader import test_loader, Jinja2Loader
-from ansible.utils.collection_loader._collection_finder import _AnsibleCollectionFinder
+from ansible.plugins.loader import test_loader, Jinja2Loader, init_plugin_loader
+import ansible_collections
 
 from .utils import get_items_in_folder
 
@@ -82,20 +82,7 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                 "plugin_routing": {},
             }
             
-            # Ensure base ansible_collections module exists or get the existing one
-            if "ansible_collections" not in sys.modules:
-                # Import it if possible (this will use the collection finder)
-                try:
-                    import ansible_collections
-                except ImportError:
-                    # If it doesn't exist, create it
-                    ansible_collections = types.ModuleType("ansible_collections")
-                    ansible_collections.__path__ = []
-                    sys.modules["ansible_collections"] = ansible_collections
-            else:
-                # Module already exists, just get a reference to it
-                ansible_collections = sys.modules["ansible_collections"]
-            
+            # Get reference to ansible_collections (already imported at top of file)
             # Ensure namespace module exists
             namespace_module_name = f"ansible_collections.{namespace}"
             if namespace_module_name not in sys.modules:
@@ -328,13 +315,9 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
     
     loader.set_vault_secrets(vault_secrets)
     
-    # Ensure Ansible collection finder is in sys.meta_path so that FQDN tests/filters
-    # from installed collections (e.g., ansible.utils.ipv4_address) can be loaded
-    collection_finder_exists = any(
-        isinstance(finder, _AnsibleCollectionFinder) for finder in sys.meta_path
-    )
-    if not collection_finder_exists:
-        sys.meta_path.insert(0, _AnsibleCollectionFinder())
+    # Initialize Ansible plugin loader which sets up the collection finder in sys.meta_path
+    # This enables discovery of installed collections for FQDN plugin resolution
+    init_plugin_loader()
     
     # Find galaxy collections and register them in-memory for FQDN access
     # This allows FQDN filter names (e.g., namespace.collection.filter_name) to be resolved
