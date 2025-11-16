@@ -95,9 +95,18 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
         # This handles !unsafe values and other unparseable content gracefully.
         LOGGER.debug(f"Skipping unparseable value in {source}: {value[:50]}... (error: {err})")
         return
-    referenced_vars = meta.find_undeclared_variables(parsed)
-    referenced_vars = referenced_vars.union(
-        walk_template_ast(parsed, context))
+    
+    try:
+        referenced_vars = meta.find_undeclared_variables(parsed)
+        referenced_vars = referenced_vars.union(
+            walk_template_ast(parsed, context))
+    except exceptions.TemplateError as err:
+        # If we can't analyze the template (e.g., due to missing collection plugins),
+        # skip it gracefully. This can happen when templates reference filters or tests
+        # from collections that aren't installed.
+        LOGGER.debug(f"Skipping template analysis in {source}: {value[:50]}... (error: {err})")
+        return
+    
     for referenced_var in referenced_vars:
         context.all_referenced_vars[referenced_var].add(source)
 

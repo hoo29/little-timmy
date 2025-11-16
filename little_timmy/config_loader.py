@@ -127,6 +127,16 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                     filter_module.__file__ = str(filter_dir / "__init__.py")
                     sys.modules[filter_module_name] = filter_module
                     setattr(plugins_module, "filter", filter_module)
+                
+                # Create plugins.test submodule if test directory exists
+                test_dir = plugins_dir / "test"
+                if test_dir.is_dir():
+                    test_module_name = f"{plugins_module_name}.test"
+                    test_module = types.ModuleType(test_module_name)
+                    test_module.__path__ = [str(test_dir.resolve())]
+                    test_module.__file__ = str(test_dir / "__init__.py")
+                    sys.modules[test_module_name] = test_module
+                    setattr(plugins_module, "test", test_module)
             
             LOGGER.debug(f"Registered in-memory collection {namespace}.{name}")
         except Exception as e:
