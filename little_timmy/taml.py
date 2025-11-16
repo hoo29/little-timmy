@@ -100,11 +100,14 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
         referenced_vars = meta.find_undeclared_variables(parsed)
         referenced_vars = referenced_vars.union(
             walk_template_ast(parsed, context))
-    except exceptions.TemplateError as err:
-        # If we can't analyze the template (e.g., due to missing collection plugins),
-        # skip it gracefully. This can happen when templates reference filters or tests
-        # from collections that aren't installed.
-        LOGGER.debug(f"Skipping template analysis in {source}: {value[:50]}... (error: {err})")
+    except exceptions.TemplateAssertionError as err:
+        # Jinja2's meta.find_undeclared_variables uses a code generator that validates
+        # filter/test names exist in the environment. FQDN filters/tests from external
+        # collections (e.g., ansible.utils.ipv4_address) may not be discoverable during
+        # static analysis even if they exist at runtime. Skip these templates gracefully.
+        # This allows analysis to continue for templates using external collection plugins
+        # that aren't loaded in the analysis environment.
+        LOGGER.debug(f"Skipping template with unresolvable plugin in {source}: {value[:50]}... (error: {err})")
         return
     
     for referenced_var in referenced_vars:

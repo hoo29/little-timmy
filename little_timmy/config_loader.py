@@ -25,6 +25,7 @@ except ImportError:
     jinja2_defaults = None
     ANSIBLE_12_PLUS = False
 from ansible.plugins.loader import test_loader, Jinja2Loader
+from ansible.utils.collection_loader._collection_finder import _AnsibleCollectionFinder
 
 from .utils import get_items_in_folder
 
@@ -127,16 +128,6 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
                     filter_module.__file__ = str(filter_dir / "__init__.py")
                     sys.modules[filter_module_name] = filter_module
                     setattr(plugins_module, "filter", filter_module)
-                
-                # Create plugins.test submodule if test directory exists
-                test_dir = plugins_dir / "test"
-                if test_dir.is_dir():
-                    test_module_name = f"{plugins_module_name}.test"
-                    test_module = types.ModuleType(test_module_name)
-                    test_module.__path__ = [str(test_dir.resolve())]
-                    test_module.__file__ = str(test_dir / "__init__.py")
-                    sys.modules[test_module_name] = test_module
-                    setattr(plugins_module, "test", test_module)
             
             LOGGER.debug(f"Registered in-memory collection {namespace}.{name}")
         except Exception as e:
@@ -326,6 +317,14 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
         vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
     
     loader.set_vault_secrets(vault_secrets)
+    
+    # Ensure Ansible collection finder is in sys.meta_path so that FQDN tests/filters
+    # from installed collections (e.g., ansible.utils.ipv4_address) can be loaded
+    collection_finder_exists = any(
+        isinstance(finder, _AnsibleCollectionFinder) for finder in sys.meta_path
+    )
+    if not collection_finder_exists:
+        sys.meta_path.insert(0, _AnsibleCollectionFinder())
     
     # Find galaxy collections and register them in-memory for FQDN access
     # This allows FQDN filter names (e.g., namespace.collection.filter_name) to be resolved
