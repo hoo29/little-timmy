@@ -48,27 +48,30 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
         try:
             with open(galaxy_file, "r") as f:
                 galaxy_info = yaml.safe_load(f)
+        except Exception as e:
+            LOGGER.debug(f"Error reading galaxy.yml at {galaxy_file}: {e}")
+            continue
+        
+        namespace = galaxy_info.get("namespace")
+        name = galaxy_info.get("name")
+        
+        if not namespace or not name:
+            continue
             
-            namespace = galaxy_info.get("namespace")
-            name = galaxy_info.get("name")
-            
-            if not namespace or not name:
-                continue
-                
-            # Check if collection is already in the correct structure
-            expected_path = Path("ansible_collections") / namespace / name
-            if collection_dir.match(f"*/{expected_path}"):
-                # Already in correct structure - Ansible will load it automatically
-                # Just ensure the parent is in sys.path
-                parent_dir = str(collection_dir.parents[2])  # Go up from name->namespace->ansible_collections
-                if parent_dir not in sys.path:
-                    sys.path.insert(0, parent_dir)
-                    LOGGER.debug(f"Found collection {namespace}.{name} at {parent_dir}")
-                continue
-            
-            # Create in-memory Python modules for the collection
-            # This avoids modifying the filesystem while still allowing FQDN resolution
-            
+        # Check if collection is already in the correct structure
+        expected_path = Path("ansible_collections") / namespace / name
+        if collection_dir.match(f"*/{expected_path}"):
+            # Already in correct structure - Ansible will load it automatically
+            # Just ensure the parent is in sys.path
+            parent_dir = str(collection_dir.parents[2])  # Go up from name->namespace->ansible_collections
+            if parent_dir not in sys.path:
+                sys.path.insert(0, parent_dir)
+                LOGGER.debug(f"Found collection {namespace}.{name} at {parent_dir}")
+            continue
+        
+        # Create in-memory Python modules for the collection
+        # This avoids modifying the filesystem while still allowing FQDN resolution
+        try:
             # Create collection metadata
             collection_meta = {
                 "name": f"{namespace}.{name}",
@@ -127,7 +130,7 @@ def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> No
             
             LOGGER.debug(f"Registered in-memory collection {namespace}.{name}")
         except Exception as e:
-            LOGGER.debug(f"Error processing galaxy.yml at {galaxy_file}: {e}")
+            LOGGER.debug(f"Error registering collection {namespace}.{name}: {e}")
 
 DEFAULT_CONFIG_FILE_NAME = ".little-timmy"
 DEFAULT_JINJA_CONTEXT_KEYS = [
