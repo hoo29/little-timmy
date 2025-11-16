@@ -1,0 +1,8 @@
+- name: Do a thing
+  ansible.builtin.set_fact:
+    role1_a: 1
+    role1_b: 2
+
+- name: Use filter
+  ansible.builtin.set_fact:
+    role1_ab: "{{ (role1_a | little_timmy.test.k8s_daemonset_healthy(role1_b)) }}"
