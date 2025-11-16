@@ -27,6 +27,104 @@ from .utils import get_items_in_folder
 
 LOGGER = logging.getLogger("little-timmy")
 
+
+def find_and_setup_galaxy_collections(root_dir: str, skip_dirs: list[str]) -> list[str]:
+    """
+    Find all galaxy collections in the root directory and set them up for FQDN access.
+    Returns a list of temporary directories containing ansible_collections structure.
+    """
+    import tempfile
+    import sys
+    from glob import iglob
+    
+    collection_paths = []
+    
+    # Look for galaxy.yml files which indicate a collection
+    for galaxy_file in iglob(f"{root_dir}/**/galaxy.yml", recursive=True):
+        # Skip if in excluded directories
+        relative_path = os.path.relpath(os.path.dirname(galaxy_file), root_dir)
+        if any(excluded_dir in relative_path for excluded_dir in skip_dirs):
+            continue
+            
+        collection_dir = os.path.dirname(galaxy_file)
+        
+        # Read galaxy.yml to get namespace and name
+        try:
+            with open(galaxy_file, 'r') as f:
+                galaxy_info = yaml.safe_load(f)
+                
+            namespace = galaxy_info.get('namespace')
+            name = galaxy_info.get('name')
+            
+            if namespace and name:
+                # Check if collection is already in the correct structure
+                expected_path = f"ansible_collections/{namespace}/{name}"
+                if collection_dir.endswith(expected_path):
+                    # Already in correct structure, add the parent directory
+                    parent_dir = collection_dir[:-len(expected_path)].rstrip('/')
+                    if parent_dir and parent_dir not in collection_paths:
+                        collection_paths.append(parent_dir)
+                        # Add to sys.path so Python can import the collection
+                        if parent_dir not in sys.path:
+                            sys.path.insert(0, parent_dir)
+                        LOGGER.debug(f"Found collection {namespace}.{name} at {parent_dir}")
+                else:
+                    # Collection exists but not in ansible_collections structure
+                    # Create a temporary directory with proper structure and symlink to it
+                    temp_dir = tempfile.mkdtemp(prefix=f"little_timmy_collections_{namespace}_{name}_")
+                    
+                    # Create ansible_collections/namespace directory structure
+                    ansible_collections_dir = os.path.join(temp_dir, "ansible_collections")
+                    namespace_dir = os.path.join(ansible_collections_dir, namespace)
+                    target_dir = os.path.join(namespace_dir, name)
+                    os.makedirs(namespace_dir, exist_ok=True)
+                    
+                    # Create __init__.py files for proper Python module structure
+                    with open(os.path.join(ansible_collections_dir, "__init__.py"), 'w') as f:
+                        f.write("")
+                    with open(os.path.join(namespace_dir, "__init__.py"), 'w') as f:
+                        f.write("")
+                    
+                    # Create symlink to the actual collection
+                    os.symlink(os.path.abspath(collection_dir), target_dir)
+                    
+                    # Create __init__.py files in plugins directories
+                    # These are needed for Python to treat them as packages
+                    plugins_dir = os.path.join(target_dir, "plugins")
+                    if os.path.exists(plugins_dir):
+                        if not os.path.exists(os.path.join(plugins_dir, "__init__.py")):
+                            with open(os.path.join(plugins_dir, "__init__.py"), 'w') as f:
+                                f.write("")
+                        # Create __init__.py for filter directory if it exists
+                        filter_dir = os.path.join(plugins_dir, "filter")
+                        if os.path.exists(filter_dir) and not os.path.exists(os.path.join(filter_dir, "__init__.py")):
+                            with open(os.path.join(filter_dir, "__init__.py"), 'w') as f:
+                                f.write("")
+                    
+                    # Create __init__.py with collection metadata
+                    # This is required for Ansible to recognize the collection
+                    collection_init = os.path.join(target_dir, "__init__.py")
+                    init_content = f"""# Auto-generated for little-timmy
+_collection_meta = {{
+    'name': '{namespace}.{name}',
+    'version': '{galaxy_info.get("version", "1.0.0")}',
+    'authors': {galaxy_info.get("authors", [])!r},
+    'description': {galaxy_info.get("description", "")!r},
+    'plugin_routing': {{}},
+}}
+"""
+                    with open(collection_init, 'w') as f:
+                        f.write(init_content)
+                    
+                    collection_paths.append(temp_dir)
+                    # Add to sys.path so Python can import the collection
+                    sys.path.insert(0, temp_dir)
+                    LOGGER.debug(f"Created temporary collection structure for {namespace}.{name} at {temp_dir}")
+        except Exception as e:
+            LOGGER.debug(f"Error processing galaxy.yml at {galaxy_file}: {e}")
+            
+    return collection_paths
+
 DEFAULT_CONFIG_FILE_NAME = ".little-timmy"
 DEFAULT_JINJA_CONTEXT_KEYS = [
     "assert.that",
@@ -211,6 +309,18 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
         vault_secrets = cli.CLI.setup_vault_secrets(loader, vault_ids=vault_ids)
     
     loader.set_vault_secrets(vault_secrets)
+    
+    # Find galaxy collections and add them to Ansible's collection paths
+    # This allows FQDN filter names (e.g., namespace.collection.filter_name) to be resolved
+    collection_paths = find_and_setup_galaxy_collections(root_dir, config.skip_dirs)
+    if collection_paths:
+        # Prepend collection directories to COLLECTIONS_PATHS
+        # We need to modify the list in place to affect the global constant
+        for coll_path in reversed(collection_paths):
+            if coll_path not in C.COLLECTIONS_PATHS:
+                C.COLLECTIONS_PATHS.insert(0, coll_path)
+                LOGGER.debug(f"Added collection path: {coll_path}")
+    
     # Setup jinja env
     plugin_folders = get_items_in_folder(
         root_dir, f"{root_dir}/**/filter_plugins", config.galaxy_dirs, True, config.skip_dirs, False)
