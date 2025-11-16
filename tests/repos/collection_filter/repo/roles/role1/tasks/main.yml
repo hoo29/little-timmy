@@ -6,3 +6,7 @@
 - name: Use filter
   ansible.builtin.set_fact:
     role1_ab: "{{ (role1_a | little_timmy.test.k8s_daemonset_healthy(role1_b)) }}"
+
+- name: Verify ip address
+  ansible.builtin.assert:
+    that: "{{ '1.1.1.1' is ansible.utils.ipv4_address }}"
