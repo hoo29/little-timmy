@@ -94,6 +94,23 @@ python module.
 Additional, optional configuration can be specified in a YAML configuration file named `.little-timmy`.
 The file can be located at any level between the current working directory and `/`.
 
+An example config file is:
+
+```yaml
+skip_vars:
+  - my_dynamically_referenced_var
+skip_dirs:
+  - molecule
+  - venv
+  - tests
+  - old_plays
+playbook_globs:
+  - /**/*playbook.y*ml
+  - /plays/**/*.yml
+extra_jinja_context_keys:
+  - my_custom_module.when_condition
+```
+
 The schema for the file is:
 
 ```python
