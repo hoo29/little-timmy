@@ -2,6 +2,14 @@
 
 Change log for the little-timmy python module.
 
+## [3.6.0] - 2026/09/09
+
+- Warn and skip, instead of erroring, when vaulted content cannot be decrypted because the vault password or vault id is
+not available. This applies to inline `!vault` values and whole vault encrypted files. Warnings are written to stderr so
+stdout can still be piped.
+- Do not prompt on stdin for a vault password when none is configured. Previously this hung, or errored when there was no tty.
+- Fix comparing inline vaulted values for duplication on ansible >= 12.
+
 ## [3.5.0] - 2025/11/16
 
 - Support custom filters in collections @copilot/@hoo29

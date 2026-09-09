@@ -2,11 +2,10 @@ import logging
 import os
 
 from ansible.utils.unsafe_proxy import AnsibleUnsafe
-from ansible.parsing.vault import AnsibleVaultError, AnsibleVaultFormatError, AnsibleVaultPasswordError
 from jinja2 import exceptions, meta, nodes, Template
 
 from .config_loader import Context
-from .utils import skip_var
+from .utils import decrypt_vault_value, is_vault_value, skip_var
 
 LOGGER = logging.getLogger("little-timmy")
 
@@ -78,6 +77,13 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
     if isinstance(value, AnsibleUnsafe):
         return
 
+    if is_vault_value(value):
+        # Inline vaulted values are decrypted lazily. Without a matching vault
+        # password or vault id this fails, so warn and skip the value instead.
+        value = decrypt_vault_value(value, source)
+        if value is None:
+            return
+
     if jinja_context:
         value = str(value)
         if "{{" not in value:
@@ -86,8 +92,6 @@ def parse_jinja(value: any, source: str, context: Context, jinja_context: bool =
 
     try:
         parsed = context.jinja_env.parse(value)
-    except (AnsibleVaultError or AnsibleVaultFormatError or AnsibleVaultPasswordError) as err:
-        raise ValueError(f"Ansible vault error for file {source}") from err
     except exceptions.TemplateError as err:
         # In ansible >= 12, !unsafe values are no longer wrapped in AnsibleUnsafe,
         # so we can't detect them before parsing. If parsing fails, skip the value

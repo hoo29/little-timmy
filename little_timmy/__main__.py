@@ -8,7 +8,7 @@ from .config_loader import setup_run
 from .duplicated_var_finder import find_duplicated_vars
 from .unused_var_finder import find_unused_vars
 
-VERSION = "3.5.0"
+VERSION = "3.6.0"
 LOGGER = logging.getLogger("little-timmy")
 
 

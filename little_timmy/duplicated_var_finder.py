@@ -2,12 +2,11 @@ from collections import defaultdict
 import logging
 import os
 
-from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
 from ansible.inventory.manager import InventoryManager
 from ansible.inventory.helpers import sort_groups
 
 from .config_loader import Context, DuplicatedVarInfo
-from .utils import get_inventories, load_data_from_file, skip_var
+from .utils import get_inventories, load_data_from_file, replace_vault_values_with_ciphertext, skip_var
 
 LOGGER = logging.getLogger("little-timmy")
 
@@ -31,15 +30,9 @@ def check_var_for_duplication(var_name: str, var_value: str, host_name: str, pat
     if isinstance(path, bytes):
         path = path.decode('utf-8')
 
-    # These may appear in plain in logs if we use the standard value
-    if isinstance(var_value, AnsibleVaultEncryptedUnicode):
-        try:
-            # wrap in try catch as we are accessing a hidden field
-            var_value = var_value._ciphertext
-        except:
-            LOGGER.debug(
-                f"failed to parse to get cipher text for {var_name} at {path}")
-            return
+    # Compare vaulted values by cipher text. This avoids decrypting them, which fails
+    # without the matching vault password, and avoids the plain text appearing in output.
+    var_value = replace_vault_values_with_ciphertext(var_value)
 
     last_value = vars_for_host[var_name][-1] if vars_for_host[var_name] else None
     if last_value:

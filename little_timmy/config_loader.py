@@ -271,9 +271,12 @@ def setup_run(root_dir: str, absolute_path: str = "") -> Context:
         # Already initialized, just get the secrets from the current context
         vault_secrets = VaultSecretsContext.current().secrets
     else:
-        # Not initialized yet (or ansible < 12), initialize it
+        # Not initialized yet (or ansible < 12), initialize it.
+        # auto_prompt=False stops ansible prompting on stdin for a vault password when
+        # none is configured, which hangs or errors when there is no tty. Vaulted content
+        # that cannot be decrypted is warned about and skipped instead.
         vault_secrets = cli.CLI.setup_vault_secrets(
-            loader, vault_ids=vault_ids)
+            loader, vault_ids=vault_ids, auto_prompt=False)
 
     loader.set_vault_secrets(vault_secrets)
 

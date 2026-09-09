@@ -1,0 +1,5 @@
+all:
+  children:
+    GROUPA:
+      hosts:
+        localhost:

@@ -1,0 +1,3 @@
+- name: Use vaulted vars
+  ansible.builtin.debug:
+    msg: "{{ vaulted_default_ok }} {{ vaulted_wrong_password }} {{ vaulted_other_id }} {{ secret_token }} {{ plain_dup }}"
