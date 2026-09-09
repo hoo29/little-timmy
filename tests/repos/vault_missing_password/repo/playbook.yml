@@ -1,0 +1,6 @@
+- name: Vault missing password
+  hosts: all
+  gather_facts: false
+  connection: local
+  roles:
+    - role1

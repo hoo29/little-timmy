@@ -82,6 +82,18 @@ inputs:
     default: replace-me-if-vault-is-used
 ```
 
+## Vault
+
+Vaulted content is decrypted using ansible's standard configuration e.g. `ANSIBLE_VAULT_PASSWORD_FILE` or
+`ANSIBLE_VAULT_IDENTITY_LIST`. little-timmy will not prompt for a vault password.
+
+If an inline `!vault` value or a vault encrypted file cannot be decrypted, for example because the password or vault id
+is not available, a warning is written to stderr and the content is skipped:
+
+- Inline values are still treated as declared variables but their decrypted content is not checked for references
+to other variables.
+- Whole vault encrypted files are skipped entirely so the variables in them are not checked.
+
 ## Version and Tags
 
 The latest version can be found in [CHANGELOG.md](./CHANGELOG.md).
